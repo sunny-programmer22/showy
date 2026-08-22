@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, ArrowLeft, Plus, X, ImagePlus, Save, Tag, Loader2, Ruler } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { INITIAL_CATEGORIES } from '../data/mockData';
@@ -9,11 +9,14 @@ import { NewProductVariant } from '../types';
 interface UploadProductPageProps {
   onBack: () => void;
   onSuccess?: () => void;
+  /** When present, the page edits an existing product instead of creating one. */
+  editProductId?: string;
 }
 
-export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) => {
-  const { currentUser, shops, addProduct } = useStore();
+export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack, editProductId }) => {
+  const { currentUser, shops, products, variants, isLoading, addProduct, updateProduct, setProductVariants } = useStore();
   const myShop = shops.find((s) => s.owner_id === currentUser?.id);
+  const editing = Boolean(editProductId);
 
   const [form, setForm] = useState({
     title: '',
@@ -39,6 +42,46 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
 
   const selectedCat = INITIAL_CATEGORIES.find((c) => c.slug === form.category);
 
+  /* ------------------- Prefill when editing an existing product ------------------- */
+  const editProduct = editProductId ? products.find((p) => p.id === editProductId) : undefined;
+
+  useEffect(() => {
+    if (!editProduct) return;
+    setForm({
+      title: editProduct.title,
+      description: editProduct.description ?? '',
+      category: editProduct.category || INITIAL_CATEGORIES[0].slug,
+      subcategory:
+        editProduct.subcategory ||
+        INITIAL_CATEGORIES.find((c) => c.slug === editProduct.category)?.subcategories[0] ||
+        '',
+      price: String(editProduct.price),
+      discount_price: editProduct.discount_price != null ? String(editProduct.discount_price) : '',
+      stock: String(editProduct.stock),
+      is_featured: Boolean(editProduct.is_featured),
+      is_returnable: editProduct.is_returnable !== false
+    });
+    setImages(editProduct.images.length > 0 ? [...editProduct.images] : ['']);
+    setTags([...(editProduct.tags ?? [])]);
+  }, [editProduct]);
+
+  useEffect(() => {
+    if (!editProduct) return;
+    const vs = variants
+      .filter((v) => v.product_id === editProduct.id)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    if (vs.length > 0) {
+      setOptionName(vs[0].option_name || 'Size');
+      setVariantRows(
+        vs.map((v) => ({
+          value: v.option_value,
+          price: v.price != null ? String(v.price) : '',
+          stock: String(v.stock)
+        }))
+      );
+    }
+  }, [editProduct, variants]);
+
   if (!myShop) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-4">
@@ -49,6 +92,21 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
         <p className="text-sm text-slate-500">You need to create a shop first before uploading products.</p>
         <button onClick={onBack} className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition">
           Go Back Home
+        </button>
+      </div>
+    );
+  }
+
+  if (editing && !isLoading && !editProduct) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-4">
+        <div className="mx-auto w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center">
+          <Package className="w-8 h-8 text-rose-500" />
+        </div>
+        <h1 className="text-xl font-extrabold text-slate-900">Product not found</h1>
+        <p className="text-sm text-slate-500">It may have been deleted, or it does not belong to your shop.</p>
+        <button onClick={onBack} className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition">
+          Back to Dashboard
         </button>
       </div>
     );
@@ -88,8 +146,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
           sort_order: i
         }));
 
-      await addProduct({
-        shop_id: myShop.id,
+      const commonFields = {
         title: form.title.trim(),
         slug: form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         description: form.description,
@@ -101,9 +158,18 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
         stock: Number(form.stock),
         images: images.filter((img) => img.trim() !== ''),
         is_featured: form.is_featured,
-        is_returnable: form.is_returnable,
-        is_active: true
-      }, newVariants);
+        is_returnable: form.is_returnable
+      };
+
+      if (editProduct) {
+        await updateProduct(editProduct.id, commonFields);
+        await setProductVariants(editProduct.id, newVariants);
+      } else {
+        await addProduct(
+          { ...commonFields, shop_id: myShop.id, is_active: true },
+          newVariants
+        );
+      }
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
@@ -127,7 +193,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
 
       <div className="space-y-1.5 mb-7">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
-          <Package className="w-8 h-8 text-brand-600" /> Upload New Product
+          <Package className="w-8 h-8 text-brand-600" /> {editing ? 'Edit Product' : 'Upload New Product'}
         </h1>
         <p className="text-sm text-slate-500">
           Listing to shop: <strong className="text-emerald-700">{myShop.name}</strong>
@@ -141,7 +207,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
 
       {success && (
         <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-bold flex items-center gap-2 animate-pulse">
-          <Save className="w-4 h-4" /> Product published to the marketplace! Redirecting...
+          <Save className="w-4 h-4" /> {editing ? 'Changes saved! Redirecting…' : 'Product published to the marketplace! Redirecting...'}
         </div>
       )}
 
@@ -332,7 +398,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
             className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition">Cancel</button>
           <button type="submit" disabled={busy}
             className="flex-1 py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-brand-100 flex items-center justify-center gap-2">
-            {busy ? (<><Loader2 className="w-4 h-4 animate-spin" /> Publishing…</>) : (<><Plus className="w-4 h-4" /> Publish Product</>)}
+            {busy ? (<><Loader2 className="w-4 h-4 animate-spin" /> {editing ? 'Saving…' : 'Publishing…'}</>) : (<><Plus className="w-4 h-4" /> {editing ? 'Save Changes' : 'Publish Product'}</>)}
           </button>
         </div>
       </form>

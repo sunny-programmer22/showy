@@ -10,7 +10,7 @@ import { VariantChip } from '../components/ui/VariantChip';
 import { confirmDialog } from '../components/ui/ConfirmDialog';
 
 interface VendorDashboardProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, extra?: any) => void;
 }
 
 type Tab = 'overview' | 'products' | 'orders' | 'wallet' | 'settings';
@@ -164,6 +164,8 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                         </button>
                       </td>
                       <td className="px-5 py-3 text-right">
+                        <button onClick={() => onNavigate('upload-product', { productId: p.id })}
+                          className="text-brand-600 hover:text-brand-700 font-bold text-[11px] mr-3">Edit</button>
                         <button onClick={async () => {
                             const ok = await confirmDialog({
                               title: 'Delete this product?',

@@ -97,8 +97,10 @@ const routeFromLocation = (): RouteState => {
     const qs = new URLSearchParams(query);
     const id = qs.get('id');
     const shopId = qs.get('shopId');
+    const productId = qs.get('productId');
     if (id) params.id = id;
     if (shopId) params.shopId = shopId;
+    if (productId) params.productId = productId;
   }
   return { page, params };
 };
@@ -228,7 +230,7 @@ const Router: React.FC = () => {
         );
 
       case 'upload-product':
-        return <UploadProductPage onBack={() => navigate('vendor-dashboard')} />;
+        return <UploadProductPage key={params.productId || 'new'} onBack={() => navigate('vendor-dashboard')} editProductId={params.productId} />;
 
       case 'checkout':
         return (
