@@ -167,14 +167,17 @@ const Router: React.FC = () => {
     const product = params?.product || products.find((p) => p.id === params?.id);
     const shop = shops.find((s) => s.id === params?.shopId);
     switch (page) {
-      case 'products':
+      case 'products': {
+        const cats = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+        const catText = cats.length > 0 ? ` Browse ${cats.slice(0, 6).join(', ')} and more.` : '';
         setSeo({
-          title: 'All Products — Shop Every Category',
-          description: 'Browse thousands of products from verified Bangladeshi sellers. Bkash/Nagad OTP checkout, nationwide cash on delivery.',
+          title: 'All Products — Online Shopping in Bangladesh',
+          description: `Buy from verified Bangladeshi sellers with bKash/Nagad OTP or cash on delivery.${catText}`,
           path: '/products'
         });
         setJsonLd('product', null);
         break;
+      }
       case 'product-detail':
         if (product) {
           setSeo({
@@ -231,8 +234,8 @@ const Router: React.FC = () => {
         break;
       default:
         setSeo({
-          title: 'Showy — Multi-Vendor E-Commerce Platform. Shop. Sell. Grow.',
-          description: "Bangladesh's multi-vendor marketplace: verified sellers, nationwide delivery, bKash/Nagad OTP checkout and a fair 5% commission for vendors.",
+          title: 'Showy — Online Shopping Bangladesh | Multi-Vendor Marketplace',
+          description: 'Shop jerseys, fashion, gadgets & more from verified Bangladeshi sellers on Showy. bKash/Nagad OTP checkout, cash on delivery nationwide. Open your own shop in minutes.',
           path: '/'
         });
     }

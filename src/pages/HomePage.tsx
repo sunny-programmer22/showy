@@ -210,6 +210,32 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           ))}
         </div>
       </section>
+
+      {/* ===== SEO content block ===== */}
+      <section className="mt-14 bg-slate-50 border-t border-slate-200/70">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-4 text-xs leading-relaxed text-slate-500">
+          <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Online Shopping in Bangladesh with Showy</h2>
+          <p>
+            Showy is a <strong className="text-slate-600">multi-vendor online marketplace in Bangladesh</strong> where you can
+            buy sports jerseys, fashion, electronics, gadgets and more from verified sellers — or{' '}
+            <button onClick={() => onNavigate('create-shop')} className="font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2">open your own online shop</button>{' '}
+            in minutes and keep 95% of every sale.
+          </p>
+          <p>
+            We make online shopping in BD simple and safe: pay with <strong className="text-slate-600">bKash or Nagad OTP verification</strong>,
+            debit/credit cards, or <strong className="text-slate-600">cash on delivery (COD)</strong> anywhere in the country — Dhaka,
+            Chattogram, Khulna, Rajshahi, Rangpur, Gaibandha and all 64 districts, delivered nationwide.
+          </p>
+          <p>
+            Every storefront is reviewed before selling, so you always buy from{' '}
+            <button onClick={() => onNavigate('shops')} className="font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2">trusted verified shops</button>.
+            Questions about orders, payments, delivery times or returns? Check our{' '}
+            <button onClick={() => onNavigate('faq')} className="font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2">FAQ</button>{' '}
+            or browse all{' '}
+            <button onClick={() => onNavigate('products')} className="font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2">products for sale in Bangladesh</button>.
+          </p>
+        </div>
+      </section>
     </div>
   );
 };
