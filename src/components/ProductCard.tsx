@@ -34,35 +34,35 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => onSelectProduct && onSelectProduct(product)}
-      className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer relative"
+      className="group bg-white rounded-2xl border border-slate-200/70 overflow-hidden shadow-soft hover:shadow-lift hover:-translate-y-1.5 hover:border-brand-200 transition-all duration-300 ease-out flex flex-col cursor-pointer relative"
     >
       {/* Product Image & Badges */}
       <div className="relative aspect-square w-full bg-slate-100 overflow-hidden">
         <img
           src={product.images[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'}
           alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
           loading="lazy"
         />
 
         {/* Discount Badge */}
         {hasDiscount && (
-          <div className="absolute top-3 left-3 bg-rose-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow-sm">
+          <div className="absolute top-3 left-3 bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow-lg shadow-rose-600/30">
             {discountPercent}% OFF
           </div>
         )}
 
         {/* Admin Flagship Badge */}
         {shop?.is_admin_shop && (
-          <div className="absolute top-3 right-3 bg-slate-900/90 backdrop-blur-xs text-amber-300 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
+          <div className="absolute top-3 right-3 glass-dark text-amber-300 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm border border-white/10">
             <ShieldCheck className="w-3 h-3 text-amber-400" />
             <span>Official Flagship</span>
           </div>
         )}
 
         {/* Quick View overlay button */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <span className="px-3 py-1.5 bg-white/90 text-slate-800 text-xs font-bold rounded-full flex items-center gap-1 shadow-md hover:bg-white">
+        <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex justify-center pb-4 bg-gradient-to-t from-slate-950/40 to-transparent">
+          <span className="glass-dark px-4 py-2 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lift border border-white/20">
             <Eye className="w-3.5 h-3.5" /> Quick View
           </span>
         </div>
@@ -73,15 +73,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div>
           {/* Shop Tag */}
           {shop && (
-            <div className="mb-1.5 flex items-center gap-1 text-[11px] font-bold text-slate-500">
-              <Store className="w-3 h-3 text-brand-600" />
+            <div className="mb-1.5 flex items-center gap-1 text-[11px] font-bold text-slate-400">
+              <Store className="w-3 h-3 text-brand-500" />
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (onNavigateToShop) onNavigateToShop(shop.id);
                 }}
-                className="hover:text-brand-600 hover:underline truncate max-w-[180px]"
+                className="hover:text-brand-600 truncate max-w-[180px]"
               >
                 {shop.name}
               </button>
@@ -89,7 +89,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
 
           {/* Title */}
-          <h3 className="font-bold text-slate-900 text-sm line-clamp-2 group-hover:text-brand-600 transition">
+          <h3 className="font-bold text-slate-900 text-sm line-clamp-2 leading-snug group-hover:text-brand-600 transition-colors">
             {product.title}
           </h3>
 
@@ -104,10 +104,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Price & Add to Cart */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-dashed border-slate-200 flex items-center justify-between">
           <div>
             <div className="flex items-baseline space-x-1.5">
-              <span className="text-base font-extrabold text-slate-900">
+              <span className="text-lg font-extrabold text-slate-900 tracking-tight">
                 ৳{(product.discount_price ?? product.price).toLocaleString()}
               </span>
               {hasDiscount && (
@@ -127,16 +127,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             type="button"
             onClick={handleAddToCart}
             disabled={product.stock === 0}
-            className={`p-2.5 rounded-xl text-white font-bold transition flex items-center justify-center ${
+            className={`p-2.5 rounded-xl text-white transition-all duration-300 flex items-center justify-center ${
               added
-                ? 'bg-emerald-600'
+                ? 'bg-emerald-600 scale-105'
                 : product.stock === 0
                 ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-brand-600 hover:bg-brand-700 active:scale-95 shadow-sm'
+                : 'bg-brand-600 hover:bg-brand-500 active:scale-90 shadow-cta'
             }`}
             title={product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
           >
-            <ShoppingCart className="w-4 h-4" />
+            <ShoppingCart className={`w-4 h-4 ${added ? 'animate-bounce' : ''}`} />
           </button>
         </div>
       </div>

@@ -3,8 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply text-slate-800 bg-slate-50 min-h-screen flex flex-col;
+    @apply text-slate-800 bg-slate-50 min-h-screen flex flex-col antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings get the display face automatically */
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-brand-500/90 text-white;
+  }
+
+  /* Consistent, elegant keyboard focus */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgb(2 132 199 / .45);
+    border-radius: 10px;
   }
 
   /* Prevent horizontal overflow on small screens.
@@ -12,6 +34,81 @@
   html,
   body {
     overflow-x: clip;
+  }
+}
+
+@layer components {
+  /* Premium gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(100deg, #38bdf8 0%, #818cf8 55%, #f0abfc 100%);
+  }
+
+  /* Shine sweep for primary CTAs */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .btn-shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / .35) 50%, transparent 60%);
+    transform: translateX(-120%);
+    transition: transform .7s cubic-bezier(.21, .61, .35, 1);
+    pointer-events: none;
+  }
+  .btn-shine:hover::after {
+    transform: translateX(120%);
+  }
+
+  /* Frosted surface */
+  .glass {
+    background: rgb(255 255 255 / .78);
+    backdrop-filter: blur(14px) saturate(1.6);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  }
+  .glass-dark {
+    background: rgb(15 23 42 / .55);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  }
+
+  /* Animated underline for nav links */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    height: 2px;
+    width: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .3s cubic-bezier(.21, .61, .35, 1);
+  }
+  .link-underline:hover::after,
+  .link-underline.is-active::after {
+    transform: scaleX(1);
+  }
+}
+
+@layer utilities {
+  /* Stagger helpers for entrance animations */
+  .delay-75  { animation-delay: 75ms; }
+  .delay-150 { animation-delay: 150ms; }
+  .delay-225 { animation-delay: 225ms; }
+  .delay-300 { animation-delay: 300ms; }
+
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent);
+    mask-image: linear-gradient(to bottom, black 70%, transparent);
   }
 }
 
@@ -47,4 +144,13 @@
 }
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

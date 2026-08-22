@@ -1,123 +1,124 @@
 import React from 'react';
-import { ShoppingBag, ShieldCheck, Truck, RefreshCw, Lock, Percent } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Truck, Lock, Percent, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const { currentUser, shops } = useStore();
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
 
+  const go = (page: string) => () => {
+    if (onNavigate) onNavigate(page);
+    else window.location.hash = `#/${page}`;
+  };
+
+  const NavLink: React.FC<{ label: string; page: string }> = ({ label, page }) => (
+    <li>
+      <button onClick={go(page)}
+        className="group inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors">
+        <span className="relative">
+          {label}
+          <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-brand-400 transition-all duration-300 group-hover:w-full" />
+        </span>
+        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-x-1 translate-y-1 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 transition-all" />
+      </button>
+    </li>
+  );
+
   return (
-    <footer className="bg-slate-900 text-slate-300 pt-12 pb-8 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="relative bg-slate-950 text-slate-300 pt-14 pb-8 overflow-hidden">
+      {/* Top hairline glow */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-brand-500/60 to-transparent" />
+      {/* Ambient glow */}
+      <div className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[42rem] h-64 bg-brand-600/10 blur-3xl rounded-full" />
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Value Proposition Highlights */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-12 border-b border-slate-800 text-xs">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-brand-500/10 text-brand-400 rounded-xl">
-              <Truck className="w-5 h-5" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pb-12 border-b border-white/5 text-xs">
+          {[
+            { icon: Truck, tint: 'bg-brand-500/10 text-brand-400', title: 'Fast Nationwide Delivery', desc: 'Coverage across all 64 districts in Bangladesh' },
+            { icon: ShieldCheck, tint: 'bg-emerald-500/10 text-emerald-400', title: '100% Genuine Guarantee', desc: 'Verified shops & direct official imports' },
+            { icon: Percent, tint: 'bg-purple-500/10 text-purple-400', title: '5% Fair Commission Model', desc: 'Transparent payout split for all vendor stores' },
+            { icon: Lock, tint: 'bg-amber-500/10 text-amber-400', title: 'Automated bKash / Nagad', desc: 'Instant OTP payment verification engine' }
+          ].map((f) => (
+            <div key={f.title} className="flex items-start space-x-3 group">
+              <div className={`p-3 ${f.tint} rounded-xl transition-transform duration-300 group-hover:-translate-y-0.5`}>
+                <f.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-white text-sm">{f.title}</h4>
+                <p className="text-slate-500 mt-0.5">{f.desc}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold text-white text-sm">Fast Nationwide Delivery</h4>
-              <p className="text-slate-400 mt-0.5">Coverage across all 64 districts in Bangladesh</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-white text-sm">100% Genuine Guarantee</h4>
-              <p className="text-slate-400 mt-0.5">Verified shops & direct official imports</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
-              <Percent className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-white text-sm">5% Fair Commission Model</h4>
-              <p className="text-slate-400 mt-0.5">Transparent payout split for all vendor stores</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-white text-sm">Automated bKash / Nagad</h4>
-              <p className="text-slate-400 mt-0.5">Instant OTP payment verification engine</p>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Footer Navigation Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 py-12">
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-brand-600 text-white rounded-lg">
+            <button onClick={go('home')} className="flex items-center space-x-2 group w-fit">
+              <div className="p-2 bg-gradient-to-br from-brand-500 to-brand-700 text-white rounded-lg shadow-lg shadow-brand-900/40 group-hover:scale-105 transition-transform">
                 <ShoppingBag className="w-5 h-5" />
               </div>
-              <span className="text-lg font-extrabold text-white">
+              <span className="text-xl font-extrabold tracking-tight text-white">
                 Showy
               </span>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              The next-generation Bangladeshi multi-vendor e-commerce platform where any user can start their own digital storefront in minutes.
+            </button>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
+              The next-generation Bangladeshi multi-vendor e-commerce platform where anyone can launch their own digital storefront in minutes.
             </p>
-            <div className="pt-2">
-              <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block mb-2">Supported Payment Gateways</span>
-              <div className="flex items-center space-x-2">
-                <span className="px-2.5 py-1 bg-bkash text-white text-[10px] font-extrabold rounded-md shadow-sm">
-                  bKash OTP
-                </span>
-                <span className="px-2.5 py-1 bg-nagad text-white text-[10px] font-extrabold rounded-md shadow-sm">
-                  Nagad PGW
-                </span>
-                <span className="px-2 py-1 bg-slate-800 text-slate-300 text-[10px] font-bold rounded-md border border-slate-700">
-                  VISA / Master
-                </span>
-                <span className="px-2 py-1 bg-slate-800 text-slate-300 text-[10px] font-bold rounded-md border border-slate-700">
-                  COD
-                </span>
+            <div className="pt-1">
+              <span className="text-[11px] font-bold uppercase text-slate-600 tracking-wider block mb-2">Supported Payment Gateways</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-1 bg-bkash text-white text-[10px] font-extrabold rounded-md shadow-sm">bKash OTP</span>
+                <span className="px-2.5 py-1 bg-nagad text-white text-[10px] font-extrabold rounded-md shadow-sm">Nagad PGW</span>
+                <span className="px-2 py-1 bg-slate-800/80 text-slate-300 text-[10px] font-bold rounded-md border border-white/5">VISA / Master</span>
+                <span className="px-2 py-1 bg-slate-800/80 text-slate-300 text-[10px] font-bold rounded-md border border-white/5">COD</span>
               </div>
             </div>
           </div>
 
           <div>
             <h4 className="font-bold text-white text-sm mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-xs">
-              <li><a href="#/products" className="hover:text-brand-400 transition">Browse Products</a></li>
-              <li><a href="#/shops" className="hover:text-brand-400 transition">Explore Vendor Shops</a></li>
-              {!userShop && <li><a href="#/create-shop" className="hover:text-brand-400 transition">Open Your Store</a></li>}
-              <li><a href="#/track-order" className="hover:text-brand-400 transition">Order Status & Invoice</a></li>
+            <ul className="space-y-2.5 text-xs">
+              <NavLink label="Browse Products" page="products" />
+              <NavLink label="Explore Vendor Shops" page="shops" />
+              {!userShop && <NavLink label="Open Your Store" page="create-shop" />}
+              <NavLink label="My Orders & Invoices" page="orders" />
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-white text-sm mb-4">For Shop Owners</h4>
-            <ul className="space-y-2 text-xs">
-              <li><a href="#/vendor-dashboard" className="hover:text-brand-400 transition">Vendor Dashboard</a></li>
-              <li><a href="#/upload-product" className="hover:text-brand-400 transition">Upload New Product</a></li>
-              <li><a href="#/vendor-dashboard" className="hover:text-brand-400 transition">Withdrawal & Wallet</a></li>
-              <li><span className="text-emerald-400 font-semibold">95% Net Revenue Share</span></li>
+            <ul className="space-y-2.5 text-xs">
+              <NavLink label="Vendor Dashboard" page="vendor-dashboard" />
+              {!userShop && <NavLink label="Create Your Shop" page="create-shop" />}
+              {userShop && <NavLink label="Upload New Product" page="upload-product" />}
+              <li><span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold"><Percent className="w-3.5 h-3.5" />95% Net Revenue Share</span></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-white text-sm mb-4">About the Platform</h4>
-            <p className="text-xs text-slate-400 leading-relaxed mb-3">
+            <p className="text-xs text-slate-500 leading-relaxed mb-3">
               A trusted multi-vendor marketplace connecting verified merchants with buyers across Bangladesh.
             </p>
-            <div className="p-3 bg-slate-800 rounded-xl border border-slate-700 text-[11px] text-slate-300">
-              <span className="font-bold text-brand-400">5% Auto Split Engine:</span> All vendor sales automatically deduct 5% for platform maintenance and credit 95% to the vendor ledger.
+            <div className="p-3.5 bg-slate-900/80 rounded-xl border border-white/5 text-[11px] text-slate-400 leading-relaxed">
+              <span className="font-bold text-brand-400">5% Auto Split Engine:</span>{' '}
+              Vendor sales automatically deduct 5% for platform maintenance and credit 95% to the vendor ledger.
             </div>
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
+        <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
           <p>© 2026 Showy — Complete Multi-Vendor E-Commerce Platform.</p>
+          <p className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            All systems operational
+          </p>
         </div>
       </div>
     </footer>

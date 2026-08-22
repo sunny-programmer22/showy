@@ -46,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-40 glass border-b border-slate-900/5 shadow-soft">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-brand-700 to-slate-900 text-white text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2">
         <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
               placeholder="Search products, brands or shops..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-20 py-2 bg-slate-100 hover:bg-slate-100/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm rounded-full border border-slate-200 transition"
+                className="w-full pl-10 pr-20 py-2 bg-slate-100/90 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/60 text-sm rounded-full border border-slate-200/70 shadow-inner transition"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <button
@@ -95,17 +95,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
           </form>
 
           {/* Navigation Items */}
-          <div className="hidden lg:flex items-center space-x-5 text-sm font-semibold text-slate-700">
+          <div className="hidden lg:flex items-center space-x-6 text-sm font-semibold text-slate-700">
             <button
               onClick={() => onNavigate('products')}
-              className={`hover:text-brand-600 transition ${activePage === 'products' ? 'text-brand-600 font-bold' : ''}`}
+              className={`link-underline hover:text-brand-600 transition ${activePage === 'products' ? 'is-active text-brand-600 font-bold' : ''}`}
             >
               All Products
             </button>
 
             <button
               onClick={() => onNavigate('shops')}
-              className={`flex items-center space-x-1 hover:text-brand-600 transition ${activePage === 'shops' ? 'text-brand-600 font-bold' : ''}`}
+              className={`link-underline flex items-center space-x-1 hover:text-brand-600 transition ${activePage === 'shops' ? 'is-active text-brand-600 font-bold' : ''}`}
             >
               <Store className="w-4 h-4" />
               <span>Explore Shops</span>
@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             {userShop ? (
               <button
                 onClick={() => onNavigate('vendor-dashboard')}
-                className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition font-bold"
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:-translate-y-px rounded-lg border border-emerald-200/80 transition font-bold"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span>My Shop Panel</span>
@@ -123,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
               currentUser && (
                 <button
                   onClick={() => onNavigate('create-shop')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-100 rounded-lg border border-brand-200 transition font-bold"
+                  className="btn-shine flex items-center space-x-1.5 px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-cta transition font-bold"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>Open Your Shop</span>
@@ -134,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             {currentUser?.role === 'admin' && (
               <button
                 onClick={() => onNavigate('admin-panel')}
-                className="flex items-center space-x-1 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg border border-purple-200 transition font-bold"
+                className="flex items-center space-x-1 px-3.5 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:-translate-y-px rounded-lg border border-purple-200/80 transition font-bold"
               >
                 <ShieldAlert className="w-4 h-4" />
                 <span>Admin Panel</span>
@@ -167,11 +167,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
                 {isUserDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsUserDropdownOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs">
-                      <div className="px-3.5 py-2 border-b border-slate-100">
+                    <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-lift border border-slate-200/60 py-1.5 z-50 text-xs animate-pop-in origin-top-right">
+                      <div className="px-3.5 py-2.5 border-b border-slate-100">
                         <p className="font-extrabold text-slate-800 truncate">{currentUser.full_name || 'User'}</p>
                         <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
-                        <span className={`inline-block mt-1.5 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide ${
+                        <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide ${
                           currentUser.role === 'admin' ? 'bg-purple-100 text-purple-700'
                           : currentUser.role === 'vendor' ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-blue-100 text-blue-700'
@@ -218,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
               /* Guest sign-in button */
               <button
                 onClick={() => setAuthModalOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl transition shadow-sm"
+                className="btn-shine flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl transition shadow-cta"
               >
                 <User className="w-3.5 h-3.5" /> Sign In
               </button>
@@ -250,7 +250,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
 
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-4 space-y-3 text-sm">
+        <div className="lg:hidden glass border-b border-slate-200/60 px-4 pt-2 pb-4 space-y-3 text-sm animate-fade-up shadow-soft">
           <form onSubmit={handleSearchSubmit} className="relative">
             <input
               type="text"

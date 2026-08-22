@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { Order } from '../types';
 
 interface OrderConfirmationPageProps {
-  order: Order;
+  order?: Order;
   onGoHome: () => void;
   onViewOrders: () => void;
 }
@@ -19,13 +19,28 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   const { shops } = useStore();
 
   useEffect(() => {
-    confetti({
-      particleCount: 160,
-      spread: 80,
-      origin: { y: 0.6 },
-      colors: ['#0284c7', '#22c55e', '#f59e0b', '#e2136e']
-    });
+    if (order) {
+      confetti({
+        particleCount: 160,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#0284c7', '#22c55e', '#f59e0b', '#e2136e']
+      });
+    }
   }, []);
+
+  if (!order) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-24 text-center space-y-4">
+        <h2 className="text-xl font-extrabold text-slate-900">Order not found</h2>
+        <p className="text-sm text-slate-500">We couldn't load this order confirmation.</p>
+        <button onClick={onGoHome}
+          className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition">
+          Back to Home
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
