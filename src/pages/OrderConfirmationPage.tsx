@@ -58,7 +58,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         <div className="bg-gradient-to-r from-brand-600 to-brand-700 p-5 text-white flex items-center justify-between">
           <div>
             <p className="text-[10px] uppercase tracking-widest opacity-80 font-bold">Invoice</p>
-            <p className="font-extrabold text-lg">Shoptastic.bd</p>
+            <p className="font-extrabold text-lg">Showy</p>
           </div>
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-widest opacity-80">Order Date</p>

@@ -49,25 +49,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-brand-700 to-slate-900 text-white text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2">
-        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-        <span>Multi-Vendor Marketplace • Create Your Own Shop Today! (5% Platform Commission Model)</span>
+        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
+        <span>
+          Multi-Vendor Marketplace
+          <span className="hidden sm:inline"> • Create Your Own Shop Today! (5% Platform Commission Model)</span>
+        </span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
           {/* Logo */}
           <button
             onClick={() => onNavigate('home')}
             className="flex items-center space-x-2 text-left group shrink-0"
           >
-            <div className="w-11 h-11 rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <img src={logo} alt="Shoptastic Logo" className="w-full h-full object-contain" />
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <img src={logo} alt="Showy Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <span className="text-xl font-extrabold tracking-tight text-slate-900 block leading-none">
-                Shoptastic<span className="text-brand-600">.bd</span>
+              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 block leading-none">
+                Showy
               </span>
-              <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase block mt-0.5">
+              <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase block mt-0.5 hidden sm:block">
                 Multi-Vendor Hub
               </span>
             </div>
@@ -140,13 +143,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
           </div>
 
           {/* User Controls & Cart */}
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-1 sm:space-x-2.5 shrink-0">
             {currentUser ? (
               /* Logged-in user menu */
               <div className="relative">
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition"
+                  className="flex items-center gap-1.5 pl-1 pr-1.5 sm:pl-1.5 sm:pr-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition"
                 >
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-extrabold uppercase ${
                     currentUser.role === 'admin' ? 'bg-purple-600'
@@ -224,7 +227,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             {/* Cart */}
             <button
               onClick={onOpenCart}
-              className="relative p-2 text-slate-700 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition"
+              className="relative p-1.5 sm:p-2 text-slate-700 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition"
             >
               <ShoppingBag className="w-6 h-6" />
               {cartCount > 0 && (
@@ -237,7 +240,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             {/* Mobile menu toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="lg:hidden p-1.5 sm:p-2 text-slate-700 hover:bg-slate-100 rounded-xl"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>

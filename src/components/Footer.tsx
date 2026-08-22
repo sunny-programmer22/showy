@@ -60,7 +60,7 @@ export const Footer: React.FC = () => {
                 <ShoppingBag className="w-5 h-5" />
               </div>
               <span className="text-lg font-extrabold text-white">
-                Shoptastic<span className="text-brand-500">.bd</span>
+                Showy
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
@@ -117,7 +117,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-          <p>© 2026 Shoptastic.bd — Complete Multi-Vendor E-Commerce Platform.</p>
+          <p>© 2026 Showy — Complete Multi-Vendor E-Commerce Platform.</p>
         </div>
       </div>
     </footer>

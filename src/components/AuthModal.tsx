@@ -109,7 +109,7 @@ export const AuthModal: React.FC = () => {
             </button>
 
             <p className="text-xs text-center text-slate-500">
-              {mode === 'login' ? "New to Shoptastic? " : 'Already have an account? '}
+              {mode === 'login' ? "New to Showy? " : 'Already have an account? '}
               <button type="button" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
                 className="font-extrabold text-brand-600 hover:underline">
                 {mode === 'login' ? 'Create one' : 'Sign in'}

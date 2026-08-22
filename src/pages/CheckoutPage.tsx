@@ -284,7 +284,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
             <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
             <p className="text-[10px] text-slate-500 leading-relaxed">
               Payments are processed through official bKash/Nagad PGW with SMS OTP verification.
-              Your card/wallet details are never stored by Shoptastic.bd.
+              Your card/wallet details are never stored by Showy.
             </p>
           </div>
         </aside>

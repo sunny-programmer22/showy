@@ -60,7 +60,7 @@ export const INITIAL_CATEGORIES: Category[] = [
 export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'user_admin',
-    email: 'admin@shoptastic.bd',
+    email: 'admin@showy.com',
     full_name: 'Platform Admin',
     phone: '01700000000',
     avatar_url: '',
@@ -93,10 +93,10 @@ export const INITIAL_SHOPS: Shop[] = [
   {
     id: 'shop_flagship',
     owner_id: 'user_admin',
-    name: 'Shoptastic Flagship',
-    slug: 'shoptastic-flagship',
+    name: 'Showy Flagship',
+    slug: 'showy-flagship',
     description:
-      'The official Shoptastic.bd flagship store — curated electronics, gadgets and lifestyle essentials with warranty and nationwide delivery.',
+      'The official Showy flagship store — curated electronics, gadgets and lifestyle essentials with warranty and nationwide delivery.',
     logo_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300',
     banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200',
     is_admin_shop: true,
@@ -336,7 +336,7 @@ export const INITIAL_ORDERS: Order[] = [
         admin_commission_5pct: 6990,
         vendor_amount_95pct: 0,
         status: 'processing',
-        shop_name: 'Shoptastic Flagship'
+        shop_name: 'Showy Flagship'
       },
       {
         id: 'item_seed_2',
