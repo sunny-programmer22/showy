@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin, CreditCard, Truck, ShieldCheck, Check, ChevronRight,
 import { useStore } from '../context/StoreContext';
 import { PaymentGatewayModal } from '../components/PaymentGatewayModal';
 import { toast } from '../components/ui/Toast';
+import { VariantChip } from '../components/ui/VariantChip';
 import { Order, PaymentMethod, ShippingAddress } from '../types';
 
 interface CheckoutPageProps {
@@ -256,18 +257,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
           <h2 className="font-extrabold text-slate-900 text-lg">Order Summary</h2>
 
           <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
-            {cart.map(({ product, quantity }) => (
-              <div key={product.id} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
-                <img src={product.images[0]} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-bold text-slate-700 line-clamp-1">{product.title}</p>
-                  <p className="text-[10px] text-slate-400">Qty: {quantity}</p>
+            {cart.map((line) => {
+              const { product, quantity, variant } = line;
+              const unit = variant?.price ?? product.discount_price ?? product.price;
+              return (
+                <div key={`${product.id}:${variant?.id ?? 'base'}`} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
+                  <img src={product.images[0]} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-slate-700 line-clamp-1"><VariantChip label={variant ? `${variant.option_name}: ${variant.option_value}` : null} />{product.title}</p>
+                    <p className="text-[10px] text-slate-400">Qty: {quantity}</p>
+                  </div>
+                  <p className="text-xs font-extrabold text-slate-800 shrink-0">
+                    ৳{(unit * quantity).toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-xs font-extrabold text-slate-800 shrink-0">
-                  ৳{((product.discount_price ?? product.price) * quantity).toLocaleString()}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="space-y-2 pt-2 border-t border-dashed border-slate-200 text-sm">

@@ -728,3 +728,63 @@ GROUP BY s.id, s.name;
 --       UPDATE public.profiles SET role = 'admin' WHERE email = 'your@email.com';
 --   • Create your flagship store from the Admin Panel (is_admin_shop = TRUE).
 -- ============================================================================
+
+-- ============================================================================
+-- SECTION 8: PRODUCT VARIANTS (size options per product)
+-- Mirrors supabase-variants-patch-002.sql - keep both in sync.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.product_variants (
+  id           UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
+  product_id   UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  option_name  TEXT NOT NULL DEFAULT 'Size',
+  option_value TEXT NOT NULL,
+  price        NUMERIC(12,2),
+  stock        INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_variants_product
+  ON public.product_variants(product_id);
+
+ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "variants_public_read" ON public.product_variants;
+CREATE POLICY "variants_public_read" ON public.product_variants
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "variants_owner_insert" ON public.product_variants;
+CREATE POLICY "variants_owner_insert" ON public.product_variants
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.products p
+      JOIN public.shops s ON s.id = p.shop_id
+      WHERE p.id = product_variants.product_id
+        AND (s.owner_id = AUTH.uid() OR public.is_admin())
+    )
+  );
+
+DROP POLICY IF EXISTS "variants_owner_update" ON public.product_variants;
+CREATE POLICY "variants_owner_update" ON public.product_variants
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.products p
+      JOIN public.shops s ON s.id = p.shop_id
+      WHERE p.id = product_variants.product_id
+        AND (s.owner_id = AUTH.uid() OR public.is_admin())
+    )
+  );
+
+DROP POLICY IF EXISTS "variants_owner_delete" ON public.product_variants;
+CREATE POLICY "variants_owner_delete" ON public.product_variants
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.products p
+      JOIN public.shops s ON s.id = p.shop_id
+      WHERE p.id = product_variants.product_id
+        AND (s.owner_id = AUTH.uid() OR public.is_admin())
+    )
+  );
+
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS variant_label TEXT;

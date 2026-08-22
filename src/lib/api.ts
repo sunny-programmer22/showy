@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import {
   Product,
+  ProductVariant,
+  NewProductVariant,
   Shop,
   UserProfile,
   CartItem,
@@ -155,6 +157,45 @@ export const apiDeleteProduct = async (id: string) => {
   if (error) throw new Error(error.message);
 };
 
+/* ------------------------------- Variants -------------------------------- */
+
+export const fetchVariants = async (): Promise<ProductVariant[]> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('product_variants')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as any[]).map((v) => ({
+    ...v,
+    price: v.price === null || v.price === undefined ? null : n(v.price),
+    stock: n(v.stock),
+    sort_order: n(v.sort_order)
+  }));
+};
+
+/** Replaces the full variant set of a product (simple + safe for MVP scale). */
+export const apiReplaceVariants = async (
+  productId: string,
+  variants: NewProductVariant[]
+): Promise<ProductVariant[]> => {
+  const sb = requireClient();
+  const del = await sb.from('product_variants').delete().eq('product_id', productId);
+  if (del.error) throw new Error(del.error.message);
+  if (variants.length === 0) return [];
+  const { data, error } = await sb
+    .from('product_variants')
+    .insert(variants.map((v, i) => ({ ...v, sort_order: v.sort_order ?? i })))
+    .select();
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as any[]).map((v) => ({
+    ...v,
+    price: v.price === null || v.price === undefined ? null : n(v.price),
+    stock: n(v.stock),
+    sort_order: n(v.sort_order)
+  }));
+};
+
 /* -------------------------------- Orders -------------------------------- */
 
 export const fetchOrders = async (shops: Shop[]): Promise<Order[]> => {
@@ -211,7 +252,7 @@ export const apiPlaceOrder = async (
   const itemRows = cart.map((cartItem) => {
     const itemShop = shops.find((s) => s.id === cartItem.product.shop_id);
     const isAdminShop = itemShop?.is_admin_shop ?? false;
-    const unitPrice = cartItem.product.discount_price ?? cartItem.product.price;
+    const unitPrice = cartItem.variant?.price ?? cartItem.product.discount_price ?? cartItem.product.price;
     const totalPrice = unitPrice * cartItem.quantity;
     const adminCommission = isAdminShop ? totalPrice : totalPrice * 0.05;
     const vendorAmount = isAdminShop ? 0 : totalPrice * 0.95;
@@ -225,6 +266,9 @@ export const apiPlaceOrder = async (
       unit_price: unitPrice,
       quantity: cartItem.quantity,
       total_price: totalPrice,
+      variant_label: cartItem.variant
+        ? `${cartItem.variant.option_name}: ${cartItem.variant.option_value}`
+        : null,
       is_admin_shop: isAdminShop,
       admin_commission_5pct: adminCommission,
       vendor_amount_95pct: vendorAmount,
@@ -241,7 +285,7 @@ export const apiPlaceOrder = async (
       customer_phone: customerPhone,
       shipping_address: shipping,
       total_amount: cart.reduce(
-        (t, c) => t + (c.product.discount_price ?? c.product.price) * c.quantity,
+        (t, c) => t + (c.variant?.price ?? c.product.discount_price ?? c.product.price) * c.quantity,
         0
       ),
       platform_fee_total: platformFeeTotal,

@@ -56,10 +56,31 @@ export interface Product {
   created_at: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  option_name: string;
+  option_value: string;
+  /** When null/undefined, the product base price applies. */
+  price?: number | null;
+  stock: number;
+  sort_order: number;
+}
+
+export type NewProductVariant = Omit<ProductVariant, 'id' | 'product_id'>;
+
+export const variantLabel = (v: ProductVariant): string =>
+  v.option_value ? `${v.option_name}: ${v.option_value}` : v.option_name;
+
 export interface CartItem {
   product: Product;
   quantity: number;
+  variant?: ProductVariant | null;
 }
+
+/** Stable identity for a cart line — same product in two sizes = two lines. */
+export const cartItemKey = (item: Pick<CartItem, 'product' | 'variant'>): string =>
+  item.variant ? `${item.product.id}:${item.variant.id}` : `${item.product.id}:-`;
 
 export interface ShippingAddress {
   fullName: string;
@@ -81,6 +102,7 @@ export interface OrderItem {
   unit_price: number;
   quantity: number;
   total_price: number;
+  variant_label?: string | null;
   is_admin_shop: boolean;
   admin_commission_5pct: number;
   vendor_amount_95pct: number;

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { toast } from '../components/ui/Toast';
+import { VariantChip } from '../components/ui/VariantChip';
 import { confirmDialog } from '../components/ui/ConfirmDialog';
 
 interface VendorDashboardProps {
@@ -202,7 +203,7 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                     <div className="flex items-center gap-3">
                       <img src={item.product_image} alt="" className="w-12 h-12 rounded-xl object-cover" />
                       <div>
-                        <p className="text-xs font-bold text-slate-800">{item.product_title} × {item.quantity}</p>
+                        <p className="text-xs font-bold text-slate-800"><VariantChip label={item.variant_label} />{item.product_title} × {item.quantity}</p>
                         <p className="text-[10px] text-slate-400 font-mono">{order.order_number} · {order.customer_name} ({order.customer_phone})</p>
                       </div>
                     </div>

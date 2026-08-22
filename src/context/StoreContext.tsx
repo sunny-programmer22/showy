@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Product, Shop, UserProfile, CartItem, Order, PayoutRequest, VendorWallet, OrderItem, PaymentMethod } from '../types';
+import { Product, Shop, UserProfile, CartItem, Order, PayoutRequest, VendorWallet, OrderItem, PaymentMethod, ProductVariant, NewProductVariant, cartItemKey } from '../types';
 import { INITIAL_USERS, INITIAL_SHOPS, INITIAL_PRODUCTS, INITIAL_ORDERS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import * as api from '../lib/api';
@@ -20,9 +20,11 @@ interface StoreContextType {
 
   // Products
   products: Product[];
-  addProduct: (product: Omit<Product, 'id' | 'created_at' | 'rating' | 'reviews_count'>) => Promise<Product>;
+  variants: ProductVariant[];
+  addProduct: (product: Omit<Product, 'id' | 'created_at' | 'rating' | 'reviews_count'>, variants?: NewProductVariant[]) => Promise<Product>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  setProductVariants: (productId: string, variants: NewProductVariant[]) => Promise<void>;
 
   // Shops
   shops: Shop[];
@@ -32,9 +34,10 @@ interface StoreContextType {
 
   // Cart (always local)
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateCartQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number, variant?: ProductVariant | null) => void;
+  /** Takes a cart line key (`productId` or `productId:variantId`). */
+  removeFromCart: (lineKey: string) => void;
+  updateCartQuantity: (lineKey: string, quantity: number) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -97,6 +100,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [products, setProducts] = useState<Product[]>(() =>
     LIVE ? [] : readLS(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS)
   );
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [orders, setOrders] = useState<Order[]>(() =>
     LIVE ? [] : readLS(STORAGE_KEYS.ORDERS, INITIAL_ORDERS)
   );
@@ -136,9 +140,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const loadPublicData = useCallback(async () => {
     if (!LIVE) return;
     try {
-      const [s, p] = await Promise.all([api.fetchShops(), api.fetchProducts()]);
+      const [s, p, v] = await Promise.all([api.fetchShops(), api.fetchProducts(), api.fetchVariants()]);
       setShops(s);
       setProducts(p);
+      setVariants(v);
     } catch (e: any) {
       console.error('Failed to load public data:', e.message);
     }
@@ -210,11 +215,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   /* ----------------------------- PRODUCTS ---------------------------- */
 
   const addProduct = async (
-    productData: Omit<Product, 'id' | 'created_at' | 'rating' | 'reviews_count'>
+    productData: Omit<Product, 'id' | 'created_at' | 'rating' | 'reviews_count'>,
+    newVariants?: NewProductVariant[]
   ): Promise<Product> => {
     if (LIVE) {
       const created = await api.apiInsertProduct(productData);
       setProducts((prev) => [created, ...prev]);
+      if (newVariants && newVariants.length > 0) {
+        const saved = await api.apiReplaceVariants(created.id, newVariants);
+        setVariants((prev) => [...prev, ...saved]);
+      }
       return created;
     }
     const newProduct: Product = {
@@ -225,6 +235,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reviews_count: 0
     };
     setProducts((prev) => [newProduct, ...prev]);
+    if (newVariants && newVariants.length > 0) {
+      setVariants((prev) => [
+        ...prev,
+        ...newVariants.map((v, i) => ({
+          ...v,
+          sort_order: v.sort_order ?? i,
+          product_id: newProduct.id,
+          id: `var_${Date.now()}_${i}`
+        }))
+      ]);
+    }
     return newProduct;
   };
 
@@ -233,8 +254,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (LIVE) await api.apiUpdateProduct(id, patch);
   };
 
+  /** Replaces a product's whole variant set (seller editor save). */
+  const setProductVariants = async (productId: string, next: NewProductVariant[]) => {
+    if (LIVE) {
+      const saved = await api.apiReplaceVariants(productId, next);
+      setVariants((prev) => [...prev.filter((v) => v.product_id !== productId), ...saved]);
+      return;
+    }
+    setVariants((prev) => [
+      ...prev.filter((v) => v.product_id !== productId),
+      ...next.map((v, i) => ({
+        ...v,
+        sort_order: v.sort_order ?? i,
+        product_id: productId,
+        id: `var_${Date.now()}_${i}`
+      }))
+    ]);
+  };
+
   const deleteProduct = async (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    setVariants((prev) => prev.filter((v) => v.product_id !== id));
     if (LIVE) await api.apiDeleteProduct(id);
   };
 
@@ -281,34 +321,35 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   /* ------------------------------- CART ------------------------------ */
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product, quantity = 1, variant?: ProductVariant | null) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const key = cartItemKey({ product, variant });
+      const existing = prev.find((item) => cartItemKey(item) === key);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          cartItemKey(item) === key ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [...prev, { product, quantity, variant: variant ?? null }];
     });
   };
 
-  const removeFromCart = (productId: string) =>
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  const removeFromCart = (lineKey: string) =>
+    setCart((prev) => prev.filter((item) => cartItemKey(item) !== lineKey));
 
-  const updateCartQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) return removeFromCart(productId);
+  const updateCartQuantity = (lineKey: string, quantity: number) => {
+    if (quantity <= 0) return removeFromCart(lineKey);
     setCart((prev) =>
-      prev.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
+      prev.map((item) => (cartItemKey(item) === lineKey ? { ...item, quantity } : item))
     );
   };
 
   const clearCart = () => setCart([]);
 
-  const cartTotal = cart.reduce(
-    (total, item) => total + (item.product.discount_price ?? item.product.price) * item.quantity,
-    0
-  );
+  const lineUnitPrice = (item: CartItem): number =>
+    item.variant?.price ?? item.product.discount_price ?? item.product.price;
+
+  const cartTotal = cart.reduce((total, item) => total + lineUnitPrice(item) * item.quantity, 0);
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
 
   /* ------------------------------ ORDERS ----------------------------- */
@@ -341,6 +382,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             p.id === line.product.id ? { ...p, stock: Math.max(0, p.stock - line.quantity) } : p
           )
         );
+        if (line.variant) {
+          setVariants((prev) =>
+            prev.map((v) =>
+              v.id === line.variant!.id ? { ...v, stock: Math.max(0, v.stock - line.quantity) } : v
+            )
+          );
+        }
       });
 
       clearCart();
@@ -357,7 +405,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const orderItems: OrderItem[] = cart.map((cartItem, idx) => {
       const itemShop = shops.find((s) => s.id === cartItem.product.shop_id);
       const isAdminShop = itemShop?.is_admin_shop ?? false;
-      const unitPrice = cartItem.product.discount_price ?? cartItem.product.price;
+      const unitPrice = cartItem.variant?.price ?? cartItem.product.discount_price ?? cartItem.product.price;
       const totalPrice = unitPrice * cartItem.quantity;
       const adminCommission = isAdminShop ? totalPrice : totalPrice * 0.05;
       const vendorAmount = isAdminShop ? 0 : totalPrice * 0.95;
@@ -373,6 +421,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         unit_price: unitPrice,
         quantity: cartItem.quantity,
         total_price: totalPrice,
+        variant_label: cartItem.variant
+          ? `${cartItem.variant.option_name}: ${cartItem.variant.option_value}`
+          : null,
         is_admin_shop: isAdminShop,
         admin_commission_5pct: adminCommission,
         vendor_amount_95pct: vendorAmount,
@@ -405,6 +456,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           p.id === line.product.id ? { ...p, stock: Math.max(0, p.stock - line.quantity) } : p
         )
       );
+      if (line.variant) {
+        setVariants((prev) =>
+          prev.map((v) =>
+            v.id === line.variant!.id ? { ...v, stock: Math.max(0, v.stock - line.quantity) } : v
+          )
+        );
+      }
     });
 
     setOrders((prev) => [newOrder, ...prev]);
@@ -568,9 +626,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setAuthModalOpen,
 
         products,
+        variants,
         addProduct,
         updateProduct,
         deleteProduct,
+        setProductVariants,
 
         shops,
         createShop,

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Package, ArrowLeft, Plus, X, ImagePlus, Save, Tag, Loader2 } from 'lucide-react';
+import { Package, ArrowLeft, Plus, X, ImagePlus, Save, Tag, Loader2, Ruler } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { INITIAL_CATEGORIES } from '../data/mockData';
 import { uploadImage } from '../lib/api';
 import { toast } from '../components/ui/Toast';
+import { NewProductVariant } from '../types';
 
 interface UploadProductPageProps {
   onBack: () => void;
@@ -25,6 +26,10 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
     is_featured: false,
     is_returnable: true
   });
+
+  interface VariantRow { value: string; price: string; stock: string; }
+  const [optionName, setOptionName] = useState('Size');
+  const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
 
   const [images, setImages] = useState<string[]>(['']);
   const [tags, setTags] = useState<string[]>([]);
@@ -73,6 +78,16 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
     }
     setBusy(true);
     try {
+      const newVariants: NewProductVariant[] = variantRows
+        .filter((r) => r.value.trim() !== '')
+        .map((r, i) => ({
+          option_name: optionName.trim() || 'Size',
+          option_value: r.value.trim(),
+          price: r.price.trim() === '' ? null : Number(r.price),
+          stock: r.stock.trim() === '' ? 0 : Math.max(0, Number(r.stock)),
+          sort_order: i
+        }));
+
       await addProduct({
         shop_id: myShop.id,
         title: form.title.trim(),
@@ -88,7 +103,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
         is_featured: form.is_featured,
         is_returnable: form.is_returnable,
         is_active: true
-      });
+      }, newVariants);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
@@ -213,6 +228,52 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
               className="w-4 h-4 accent-emerald-600" />
             Accept returns (shows a 7-day return badge — uncheck for final sale)
           </label>
+        </section>
+
+        {/* Size / Variant Options */}
+        <section className="space-y-3">
+          <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-2">
+            <Ruler className="w-4 h-4 text-brand-600" /> Size / Variant Options <span className="normal-case font-medium text-slate-400 text-[11px]">(optional)</span>
+          </h3>
+          <p className="text-xs text-slate-500 -mt-1">
+            Selling apparel or shoes? Add options like S / M / L, each with its own stock and optional price. Buyers must pick one before adding to cart.
+          </p>
+
+          {variantRows.length > 0 && (
+            <div className="grid grid-cols-[7rem_1fr] sm:grid-cols-[9rem_1fr_1fr_1fr_auto] gap-2 items-center">
+              <input type="text" value={optionName} onChange={(e) => setOptionName(e.target.value)}
+                placeholder="Option name" aria-label="Option name (e.g. Size)"
+                className={`${inputCls} py-2 text-xs font-bold`} />
+              {variantRows.map((row, i) => (
+                <React.Fragment key={i}>
+                  {/* On mobile the option-name cell only renders on the first row */}
+                  {i > 0 && <span className="sm:hidden" aria-hidden="true" />}
+                  <input type="text" value={row.value}
+                    onChange={(e) => setVariantRows(variantRows.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))}
+                    placeholder={i === 0 ? 'Value (e.g. M)' : 'Value'} aria-label={`Option ${i + 1} value`}
+                    className={`${inputCls} py-2`} />
+                  <div className="col-span-2 grid grid-cols-2 gap-2 sm:contents">
+                    <input type="number" min="0" step="0.01" value={row.price}
+                      onChange={(e) => setVariantRows(variantRows.map((r, j) => (j === i ? { ...r, price: e.target.value } : r)))}
+                      placeholder="Price ৳ (blank = base)" aria-label={`Option ${i + 1} price override`}
+                      className={`${inputCls} py-2`} />
+                    <input type="number" min="0" value={row.stock}
+                      onChange={(e) => setVariantRows(variantRows.map((r, j) => (j === i ? { ...r, stock: e.target.value } : r)))}
+                      placeholder="Stock qty" aria-label={`Option ${i + 1} stock`}
+                      className={`${inputCls} py-2`} />
+                  </div>
+                  <button type="button" onClick={() => setVariantRows(variantRows.filter((_, j) => j !== i))}
+                    aria-label={`Remove option ${i + 1}`}
+                    className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition shrink-0"><X className="w-4 h-4" /></button>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+
+          <button type="button" onClick={() => setVariantRows([...variantRows, { value: '', price: '', stock: '' }])}
+            className="flex items-center gap-1.5 px-3 py-2 bg-brand-50 hover:bg-brand-100 border border-brand-200 text-brand-700 text-xs font-bold rounded-lg transition">
+            <Plus className="w-3.5 h-3.5" /> Add Option
+          </button>
         </section>
 
         {/* Images — file upload or URL */}

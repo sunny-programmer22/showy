@@ -3,6 +3,7 @@ import { Package, CheckCircle2, Truck, Clock, XCircle, ChevronDown } from 'lucid
 import { useStore } from '../context/StoreContext';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
+import { VariantChip } from '../components/ui/VariantChip';
 import { Order, OrderStatus } from '../types';
 
 interface OrdersPageProps {
@@ -152,7 +153,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onBack }) => {
                   <div key={item.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <img src={item.product_image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 line-clamp-1">{item.product_title}</p>
+                      <p className="text-xs font-bold text-slate-800 line-clamp-1"><VariantChip label={item.variant_label} />{item.product_title}</p>
                       <p className="text-[10px] text-slate-400">Sold by {item.shop_name} · Qty {item.quantity}</p>
                     </div>
                     <div className="text-right shrink-0">

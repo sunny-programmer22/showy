@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight, Store } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { EmptyState } from './ui/EmptyState';
+import { cartItemKey } from '../types';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -69,25 +70,33 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
                   <Store className="w-3.5 h-3.5" />
                   {shops.find((s) => s.id === shopId)?.name || 'Vendor'}
                 </div>
-                {items.map(({ product, quantity }) => {
-                  const price = product.discount_price ?? product.price;
+                {items.map((line) => {
+                  const { product, quantity, variant } = line;
+                  const lineKey = cartItemKey(line);
+                  const price = variant?.price ?? product.discount_price ?? product.price;
+                  const maxStock = variant ? variant.stock : product.stock;
                   return (
-                    <div key={product.id} className="flex gap-3 bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                    <div key={lineKey} className="flex gap-3 bg-slate-50 rounded-2xl p-3 border border-slate-100">
                       <img src={product.images[0]} alt={product.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h4 className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug">{product.title}</h4>
+                        {variant && (
+                          <span className="inline-block mt-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500 bg-slate-200/70 border border-slate-300/70 rounded-md px-1.5 py-0.5">
+                            {variant.option_name}: {variant.option_value}
+                          </span>
+                        )}
                         <p className="text-sm font-extrabold text-brand-700 mt-1">৳{price.toLocaleString()}</p>
 
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
-                            <button onClick={() => updateCartQuantity(product.id, quantity - 1)} aria-label={`Decrease ${product.title} quantity`}
+                            <button onClick={() => updateCartQuantity(lineKey, quantity - 1)} aria-label={`Decrease ${product.title} quantity`}
                               className="p-1.5 hover:bg-slate-50 transition"><Minus className="w-3 h-3" /></button>
                             <span className="px-3 text-xs font-bold">{quantity}</span>
-                            <button onClick={() => updateCartQuantity(product.id, Math.min(product.stock, quantity + 1))}
-                              disabled={quantity >= product.stock} aria-label={`Increase ${product.title} quantity`}
+                            <button onClick={() => updateCartQuantity(lineKey, Math.min(maxStock, quantity + 1))}
+                              disabled={quantity >= maxStock} aria-label={`Increase ${product.title} quantity`}
                               className="p-1.5 hover:bg-slate-50 transition disabled:opacity-30"><Plus className="w-3 h-3" /></button>
                           </div>
-                          <button onClick={() => removeFromCart(product.id)} aria-label={`Remove ${product.title} from cart`}
+                          <button onClick={() => removeFromCart(lineKey)} aria-label={`Remove ${product.title} from cart`}
                             className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </div>

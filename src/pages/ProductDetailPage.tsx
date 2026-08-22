@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Star, ShoppingCart, ArrowLeft, Store, ShieldCheck, Minus, Plus, Truck, RefreshCw, BadgePercent, Ban } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
@@ -19,7 +19,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onNavigateToShop,
   onGoToCart
 }) => {
-  const { addToCart, shops, products } = useStore();
+  const { addToCart, shops, products, variants } = useStore();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
@@ -35,8 +35,37 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     (p) => p.id !== product.id && (p.shop_id === product.shop_id || p.category === product.category)
   ).slice(0, 4);
 
+  /* ------------------------- Size / variant logic ------------------------- */
+  const productVariants = useMemo(
+    () =>
+      variants
+        .filter((v) => v.product_id === product.id)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [variants, product.id]
+  );
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const selectedVariant = productVariants.find((v) => v.id === selectedVariantId) ?? null;
+
+  // Re-select a sensible default whenever the product (or its variants) change
+  useEffect(() => {
+    setSelectedVariantId(productVariants.find((v) => v.stock > 0)?.id ?? null);
+    setQty(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id, productVariants.map((v) => v.id).join('|')]);
+
+  // Keep quantity within stock of whichever option is selected
+  useEffect(() => {
+    setQty((q) => Math.max(1, Math.min(q, Math.max(1, selectedVariant?.stock ?? product.stock))));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVariantId]);
+
+  const effectivePrice = selectedVariant?.price ?? finalPrice;
+  const effectiveStock = selectedVariant ? selectedVariant.stock : product.stock;
+  const needsSelection = productVariants.length > 0 && !selectedVariant;
+
   const handleAddToCart = () => {
-    addToCart(product, qty);
+    if (needsSelection || effectiveStock === 0) return;
+    addToCart(product, qty, selectedVariant);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -108,23 +137,70 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <span className="text-slate-400">· {product.reviews_count} verified reviews</span>
           </div>
 
+          {/* Variant selector */}
+          {productVariants.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">
+                Select {productVariants[0]?.option_name ?? 'Size'}
+                <span aria-hidden="true" className="text-rose-500"> *</span>
+              </p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={`Choose ${productVariants[0]?.option_name ?? 'size'}`}>
+                {productVariants.map((v) => {
+                  const out = v.stock === 0;
+                  const active = selectedVariantId === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setSelectedVariantId(v.id)}
+                      disabled={out}
+                      aria-pressed={active}
+                      aria-label={`${v.option_value}${out ? ', out of stock' : ''}`}
+                      className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${
+                        out
+                          ? 'border-slate-200 bg-slate-50 text-slate-300 line-through cursor-not-allowed'
+                          : active
+                          ? 'border-brand-600 bg-brand-50 text-brand-700 shadow-sm ring-2 ring-brand-100'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-brand-400 hover:text-brand-600'
+                      }`}
+                    >
+                      {v.option_value}
+                      {!out && v.price != null && (
+                        <span className={`ml-1.5 text-[10px] font-extrabold ${active ? 'text-brand-500' : 'text-slate-400'}`}>
+                          ৳{v.price.toLocaleString()}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {needsSelection && (
+                <p className="text-[11px] font-semibold text-amber-600">Please choose an option before adding to cart.</p>
+              )}
+            </div>
+          )}
+
           {/* Price block */}
           <div className="bg-slate-50 rounded-2xl p-5 space-y-2 border border-slate-100">
             <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-extrabold text-slate-900">৳{finalPrice.toLocaleString()}</span>
-              {hasDiscount && <span className="text-lg text-slate-400 line-through font-medium">৳{product.price.toLocaleString()}</span>}
-              {hasDiscount && <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-extrabold rounded-md">SAVE ৳{(product.price - finalPrice).toLocaleString()}</span>}
+              <span className="text-4xl font-extrabold text-slate-900">৳{effectivePrice.toLocaleString()}</span>
+              {effectivePrice < product.price && (
+                <>
+                  <span className="text-lg text-slate-400 line-through font-medium">৳{product.price.toLocaleString()}</span>
+                  <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-extrabold rounded-md">SAVE ৳{(product.price - effectivePrice).toLocaleString()}</span>
+                </>
+              )}
             </div>
             {!shop?.is_admin_shop && (
               <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3" /> Vendor receives ৳{(finalPrice * 0.95).toFixed(0)} after automatic 5% platform split
+                <RefreshCw className="w-3 h-3" /> Vendor receives ৳{(effectivePrice * 0.95).toFixed(0)} after automatic 5% platform split
               </p>
             )}
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
-              {product.stock > 0 ? (
-                product.stock <= 5
-                  ? <><span className="text-amber-600 font-bold">⚠ Only {product.stock} left!</span> order fast</>
-                  : <>✓ In stock ({product.stock} units available)</>
+              {effectiveStock > 0 ? (
+                effectiveStock <= 5
+                  ? <><span className="text-amber-600 font-bold">⚠ Only {effectiveStock} left!</span> order fast</>
+                  : <>✓ In stock ({effectiveStock} units available)</>
               ) : <span className="text-rose-600 font-bold">✗ Out of Stock</span>}
             </p>
           </div>
@@ -132,20 +208,20 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           {/* Quantity + CTA */}
           <div className="flex items-center gap-3">
             <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="p-3 hover:bg-slate-50 transition"><Minus className="w-4 h-4" /></button>
+              <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Decrease quantity" className="p-3 hover:bg-slate-50 transition"><Minus className="w-4 h-4" /></button>
               <span className="px-5 py-3 font-bold text-sm border-x border-slate-200">{qty}</span>
-              <button onClick={() => setQty(Math.min(product.stock, qty + 1))} disabled={qty >= product.stock}
-                className="p-3 hover:bg-slate-50 transition disabled:opacity-30"><Plus className="w-4 h-4" /></button>
+              <button onClick={() => setQty(Math.min(effectiveStock, qty + 1))} disabled={qty >= effectiveStock}
+                aria-label="Increase quantity" className="p-3 hover:bg-slate-50 transition disabled:opacity-30"><Plus className="w-4 h-4" /></button>
             </div>
-            <button onClick={handleAddToCart} disabled={product.stock === 0}
+            <button onClick={handleAddToCart} disabled={needsSelection || effectiveStock === 0}
               className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-md ${
                 added ? 'bg-emerald-600 shadow-emerald-100'
-                  : product.stock === 0 ? 'bg-slate-300 cursor-not-allowed'
+                  : needsSelection || effectiveStock === 0 ? 'bg-slate-300 cursor-not-allowed'
                   : 'bg-brand-600 hover:bg-brand-700 shadow-brand-100 active:scale-[0.98]'}`}>
               <ShoppingCart className="w-4 h-4" />
               {added ? 'Added to Cart ✓' : 'Add to Cart'}
             </button>
-            <button onClick={() => { handleAddToCart(); setTimeout(onGoToCart, 400); }} disabled={product.stock === 0}
+            <button onClick={() => { handleAddToCart(); setTimeout(onGoToCart, 400); }} disabled={needsSelection || effectiveStock === 0}
               className="px-5 py-3.5 rounded-xl font-bold text-sm bg-slate-900 hover:bg-slate-800 text-white transition shadow-md disabled:bg-slate-300">
               Buy Now
             </button>

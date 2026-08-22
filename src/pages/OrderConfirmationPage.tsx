@@ -3,6 +3,7 @@ import { CheckCircle2, Package, Printer, Home, ChevronRight, Truck } from 'lucid
 import confetti from 'canvas-confetti';
 import { useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
+import { VariantChip } from '../components/ui/VariantChip';
 import { Order } from '../types';
 
 interface OrderConfirmationPageProps {
@@ -100,7 +101,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                   <div key={item.id} className="flex items-center gap-3">
                     <img src={item.product_image} alt="" className="w-14 h-14 rounded-xl object-cover border border-slate-100" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 line-clamp-1">{item.product_title}</p>
+                      <p className="text-xs font-bold text-slate-800 line-clamp-1"><VariantChip label={item.variant_label} />{item.product_title}</p>
                       <p className="text-[11px] text-slate-400">৳{item.unit_price.toLocaleString()} × {item.quantity}</p>
                     </div>
                     <p className="text-sm font-extrabold text-slate-900">৳{item.total_price.toLocaleString()}</p>
