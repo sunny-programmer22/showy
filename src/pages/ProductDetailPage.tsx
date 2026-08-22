@@ -77,9 +77,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="mb-3">
         <ol className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-          <li><a href="#/" className="hover:text-brand-600 transition">Home</a></li>
+          <li><a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.dispatchEvent(new PopStateEvent('popstate')); window.scrollTo({ top: 0 }); }} className="hover:text-brand-600 transition">Home</a></li>
           <li aria-hidden="true">/</li>
-          <li><a href="#/products" className="hover:text-brand-600 transition capitalize">{product.category}</a></li>
+          <li><a href="/products" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/products'); window.dispatchEvent(new PopStateEvent('popstate')); window.scrollTo({ top: 0 }); }} className="hover:text-brand-600 transition capitalize">{product.category}</a></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-slate-600 truncate max-w-[240px]">{product.title}</li>
         </ol>

@@ -38,6 +38,50 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Structured data: Organization + WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://showy.jubair.bond/#org",
+          "name": "Showy",
+          "url": "https://showy.jubair.bond/",
+          "logo": "https://showy.jubair.bond/icon-512.png",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+880-1863-875033",
+            "email": "siddiknurealam1@gmail.com",
+            "areaServed": "BD",
+            "availableLanguage": ["en", "bn"]
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Gaibandha",
+            "addressRegion": "Rangpur",
+            "addressCountry": "BD"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://showy.jubair.bond/#site",
+          "url": "https://showy.jubair.bond/",
+          "name": "Showy",
+          "publisher": { "@id": "https://showy.jubair.bond/#org" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://showy.jubair.bond/products?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body class="bg-gray-50 text-gray-900 font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-brand-500 selection:text-white">
     <div id="root"></div>

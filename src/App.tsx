@@ -9,6 +9,7 @@ import { Toaster } from './components/ui/Toast';
 import { ConfirmDialogHost } from './components/ui/ConfirmDialog';
 import { BottomNav } from './components/BottomNav';
 import { Product, Order } from './types';
+import { setSeo, setJsonLd, SITE_URL } from './lib/seo';
 import logo from './assets/logo.png';
 
 /* ------------------------- Code-split route chunks ------------------------ */
@@ -87,34 +88,52 @@ interface RouteState {
   params?: any;
 }
 
-/** Parse "#/page?id=..." from the URL (for fresh loads & footer anchor links) */
+/** Real, crawlable URL for each route (Google indexes these individually). */
+const pathForRoute = (target: string, params: any = {}): string => {
+  if (target === 'product-detail') return `/product/${params.product?.id ?? params.id ?? ''}`;
+  if (target === 'shop-detail') return `/shop/${params.shopId ?? ''}`;
+  const base =
+    target === 'home' ? '/' : `/${target}`;
+  if (target === 'upload-product' && params.productId) return `${base}?productId=${params.productId}`;
+  if (target === 'order-confirmation' && params.order?.id) return `${base}?id=${params.order.id}`;
+  return base;
+};
+
+/** Parse "/product/123?..." from the pathname (fresh loads, deep links & 404.html fallback). */
 const routeFromLocation = (): RouteState => {
-  const raw = window.location.hash.replace(/^#\/?/, '');
-  const [path, query] = raw.split('?');
-  const page = KNOWN_PAGES.includes(path) ? path : 'home';
+  const cleanPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  const segments = cleanPath.split('/').filter(Boolean);
   const params: any = {};
-  if (query) {
-    const qs = new URLSearchParams(query);
-    const id = qs.get('id');
-    const shopId = qs.get('shopId');
-    const productId = qs.get('productId');
-    if (id) params.id = id;
-    if (shopId) params.shopId = shopId;
-    if (productId) params.productId = productId;
+  const qs = new URLSearchParams(window.location.search);
+  const id = qs.get('id');
+  const shopId = qs.get('shopId');
+  const productId = qs.get('productId');
+  if (id) params.id = id;
+  if (shopId) params.shopId = shopId;
+  if (productId) params.productId = productId;
+
+  let page = 'home';
+  const [first, second] = segments;
+  if (first === 'product') {
+    page = 'product-detail';
+    if (second && !params.id) params.id = second;
+  } else if (first === 'shop') {
+    page = 'shop-detail';
+    if (second && !params.shopId) params.shopId = second;
+  } else if (first && KNOWN_PAGES.includes(first)) {
+    page = first;
   }
   return { page, params };
 };
 
 const Router: React.FC = () => {
-  const { products, orders, cartCount } = useStore();
+  const { products, shops, orders, cartCount } = useStore();
   const [route, setRoute] = useState<RouteState>(() => routeFromLocation());
   const [cartOpen, setCartOpen] = useState(false);
 
   const navigate = (target: string, extra?: any) => {
     const params = extra || {};
-    let url = `#/${target}`;
-    if (target === 'product-detail' && params.product?.id) url += `?id=${params.product.id}`;
-    if (target === 'shop-detail' && params.shopId) url += `?shopId=${params.shopId}`;
+    const url = pathForRoute(target, params);
     try { window.history.pushState({ page: target, params }, '', url); } catch { /* noop */ }
     setRoute({ page: target, params });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -125,7 +144,7 @@ const Router: React.FC = () => {
     // Seed the very first entry so "back" from home doesn't leave a broken trail
     if (!window.history.state?.page) {
       const r = routeFromLocation();
-      window.history.replaceState({ page: r.page, params: r.params }, '', window.location.hash || '#/home');
+      window.history.replaceState({ page: r.page, params: r.params }, '', window.location.pathname + window.location.search);
     }
 
     const handlePop = (e: PopStateEvent) => {
@@ -138,23 +157,86 @@ const Router: React.FC = () => {
       window.scrollTo({ top: 0 });
     };
 
-    const handleHash = () => {
-      // Anchor links (e.g. footer "#/products") don't carry history state
-      setRoute((prev) => {
-        const next = routeFromLocation();
-        if (next.page === prev.page && !next.params.id && !next.params.shopId) return prev;
-        return next;
-      });
-      window.scrollTo({ top: 0 });
-    };
-
     window.addEventListener('popstate', handlePop);
-    window.addEventListener('hashchange', handleHash);
-    return () => {
-      window.removeEventListener('popstate', handlePop);
-      window.removeEventListener('hashchange', handleHash);
-    };
+    return () => window.removeEventListener('popstate', handlePop);
   }, []);
+
+  /* ---------------- Per-route <title>, description & structured data ---------------- */
+  const { page, params } = route;
+  useEffect(() => {
+    const product = params?.product || products.find((p) => p.id === params?.id);
+    const shop = shops.find((s) => s.id === params?.shopId);
+    switch (page) {
+      case 'products':
+        setSeo({
+          title: 'All Products — Shop Every Category',
+          description: 'Browse thousands of products from verified Bangladeshi sellers. Bkash/Nagad OTP checkout, nationwide cash on delivery.',
+          path: '/products'
+        });
+        setJsonLd('product', null);
+        break;
+      case 'product-detail':
+        if (product) {
+          setSeo({
+            title: `${product.title} — Buy Online in Bangladesh`,
+            description: (product.description || `Buy ${product.title} at the best price in Bangladesh.`).slice(0, 155),
+            path: `/product/${product.id}`
+          });
+          setJsonLd('product', {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.title,
+            image: product.images.slice(0, 2),
+            description: (product.description || '').slice(0, 500),
+            category: product.category,
+            offers: {
+              '@type': 'Offer',
+              priceCurrency: 'BDT',
+              price: String(product.discount_price ?? product.price),
+              availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+              url: `${SITE_URL}/product/${product.id}`
+            }
+          });
+        }
+        break;
+      case 'shop-detail':
+        if (shop) {
+          setSeo({
+            title: `${shop.name} — Verified Seller`,
+            description: (shop.description || `Shop ${shop.name} on Showy — verified Bangladeshi seller with nationwide delivery.`).slice(0, 155),
+            path: `/shop/${shop.id}`
+          });
+        }
+        break;
+      case 'shops':
+        setSeo({ title: 'Explore Vendor Shops', description: 'Discover verified independent shops selling on Showy marketplace.', path: '/shops' });
+        break;
+      case 'about':
+        setSeo({ title: 'About Us', description: "Showy is Bangladesh's multi-vendor marketplace — sellers keep 95% of every sale.", path: '/about' });
+        break;
+      case 'contact':
+        setSeo({ title: 'Contact Us', description: 'Reach the Showy support team by email or hotline.', path: '/contact' });
+        break;
+      case 'faq':
+        setSeo({ title: 'FAQ', description: 'Answers about ordering, payments, delivery, returns and selling on Showy.', path: '/faq' });
+        break;
+      case 'privacy':
+        setSeo({ title: 'Privacy Policy', description: 'How Showy collects, uses and protects your personal data.', path: '/privacy' });
+        break;
+      case 'terms':
+        setSeo({ title: 'Terms & Conditions', description: 'The rules governing use of the Showy marketplace.', path: '/terms' });
+        break;
+      case 'orders':
+        setSeo({ title: 'My Orders & Invoices', description: 'Track your Showy orders and print invoices.', path: '/orders' });
+        break;
+      default:
+        setSeo({
+          title: 'Showy — Multi-Vendor E-Commerce Platform. Shop. Sell. Grow.',
+          description: "Bangladesh's multi-vendor marketplace: verified sellers, nationwide delivery, bKash/Nagad OTP checkout and a fair 5% commission for vendors.",
+          path: '/'
+        });
+    }
+  }, [page, params?.id, params?.shopId, products.length, shops.length]);
 
   const renderPage = () => {
     const { page, params } = route;

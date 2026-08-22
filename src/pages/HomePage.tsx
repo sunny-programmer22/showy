@@ -7,7 +7,7 @@ import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
 import { ProductCardSkeleton, Skeleton } from '../components/ui/Skeleton';
 import { Product } from '../types';
-import poster from '../assets/poster.png';
+import poster from '../assets/poster.jpg';
 
 interface HomePageProps {
   onSelectProduct: (p: Product) => void;
@@ -32,7 +32,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
       {/* ===== HERO with Poster ===== */}
       <section className="relative bg-slate-950 overflow-hidden">
         {/* Poster as background */}
-        <img src={poster} alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" />
+        <img src={poster} alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" fetchPriority="high" />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" />
         {/* Ambient glow orbs */}
         <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-brand-600/25 rounded-full blur-3xl" />

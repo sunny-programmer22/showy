@@ -123,7 +123,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [cart, setCart] = useState<CartItem[]>(() => readLS(STORAGE_KEYS.CART, []));
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedShopId, setSelectedShopId] = useState('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);

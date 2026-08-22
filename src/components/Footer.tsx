@@ -12,7 +12,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
   const go = (page: string) => () => {
     if (onNavigate) onNavigate(page);
-    else window.location.hash = `#/${page}`;
+    else window.location.assign(page === 'home' ? '/' : `/${page}`);
   };
 
   const NavLink: React.FC<{ label: string; page: string }> = ({ label, page }) => (
