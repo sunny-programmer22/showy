@@ -3,6 +3,7 @@ import { Package, ArrowLeft, Plus, X, ImagePlus, Save, Tag, Loader2 } from 'luci
 import { useStore } from '../context/StoreContext';
 import { INITIAL_CATEGORIES } from '../data/mockData';
 import { uploadImage } from '../lib/api';
+import { toast } from '../components/ui/Toast';
 
 interface UploadProductPageProps {
   onBack: () => void;
@@ -60,14 +61,14 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
       const url = await uploadImage(file, currentUser.id);
       setImages((prev) => prev.map((x, j) => (j === index ? url : x)));
     } catch (e: any) {
-      alert(`Image upload failed: ${e.message}`);
+      toast.error(`Image upload failed: ${e.message}`);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim() || !form.price) {
-      alert('Product title and regular price are required.');
+      toast.error('Product title and regular price are required.');
       return;
     }
     setBusy(true);
@@ -94,7 +95,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
         onBack();
       }, 1600);
     } catch (err: any) {
-      alert(`Could not publish product: ${err.message}`);
+      toast.error(`Could not publish product: ${err.message}`);
     } finally {
       setBusy(false);
     }

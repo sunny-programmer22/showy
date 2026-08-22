@@ -43,6 +43,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-3">
+        <ol className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
+          <li><a href="#/" className="hover:text-brand-600 transition">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="#/products" className="hover:text-brand-600 transition capitalize">{product.category}</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-slate-600 truncate max-w-[240px]">{product.title}</li>
+        </ol>
+      </nav>
+
       <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-600 mb-6 transition">
         <ArrowLeft className="w-4 h-4" /> Continue Browsing
       </button>
@@ -61,7 +72,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           {product.images.length > 1 && (
             <div className="flex gap-3">
               {product.images.map((img, i) => (
-                <button key={i} onClick={() => setActiveImage(i)}
+                <button key={i} onClick={() => setActiveImage(i)} aria-label={`View image ${i + 1} of ${product.images.length}`}
+                  aria-current={activeImage === i}
                   className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition ${activeImage === i ? 'border-brand-600 ring-2 ring-brand-200' : 'border-slate-200 opacity-70 hover:opacity-100'}`}>
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>

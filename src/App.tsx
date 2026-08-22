@@ -1,24 +1,63 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { CategoryBar } from './components/CategoryBar';
 import { CartDrawer } from './components/CartDrawer';
 import { AuthModal } from './components/AuthModal';
-import { HomePage } from './pages/HomePage';
-import { ProductsPage } from './pages/ProductsPage';
-import { ProductDetailPage } from './pages/ProductDetailPage';
-import { ShopListPage } from './pages/ShopListPage';
-import { ShopStorefrontPage } from './pages/ShopStorefrontPage';
-import { CreateShopPage } from './pages/CreateShopPage';
-import { UploadProductPage } from './pages/UploadProductPage';
-import { CheckoutPage } from './pages/CheckoutPage';
-import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
-import { OrdersPage } from './pages/OrdersPage';
-import { VendorDashboard } from './pages/VendorDashboard';
-import { AdminPanel } from './pages/AdminPanel';
+import { Toaster } from './components/ui/Toast';
+import { ConfirmDialogHost } from './components/ui/ConfirmDialog';
+import { BottomNav } from './components/BottomNav';
 import { Product, Order } from './types';
 import logo from './assets/logo.png';
+
+/* ------------------------- Code-split route chunks ------------------------ */
+const HomePage = lazy(() =>
+  import('./pages/HomePage').then((m) => ({ default: m.HomePage }))
+);
+const ProductsPage = lazy(() =>
+  import('./pages/ProductsPage').then((m) => ({ default: m.ProductsPage }))
+);
+const ProductDetailPage = lazy(() =>
+  import('./pages/ProductDetailPage').then((m) => ({ default: m.ProductDetailPage }))
+);
+const ShopListPage = lazy(() =>
+  import('./pages/ShopListPage').then((m) => ({ default: m.ShopListPage }))
+);
+const ShopStorefrontPage = lazy(() =>
+  import('./pages/ShopStorefrontPage').then((m) => ({ default: m.ShopStorefrontPage }))
+);
+const CreateShopPage = lazy(() =>
+  import('./pages/CreateShopPage').then((m) => ({ default: m.CreateShopPage }))
+);
+const UploadProductPage = lazy(() =>
+  import('./pages/UploadProductPage').then((m) => ({ default: m.UploadProductPage }))
+);
+const CheckoutPage = lazy(() =>
+  import('./pages/CheckoutPage').then((m) => ({ default: m.CheckoutPage }))
+);
+const OrderConfirmationPage = lazy(() =>
+  import('./pages/OrderConfirmationPage').then((m) => ({ default: m.OrderConfirmationPage }))
+);
+const OrdersPage = lazy(() =>
+  import('./pages/OrdersPage').then((m) => ({ default: m.OrdersPage }))
+);
+const VendorDashboard = lazy(() =>
+  import('./pages/VendorDashboard').then((m) => ({ default: m.VendorDashboard }))
+);
+const AdminPanel = lazy(() =>
+  import('./pages/AdminPanel').then((m) => ({ default: m.AdminPanel }))
+);
+
+/** Route-level Suspense fallback */
+const PageLoader: React.FC = () => (
+  <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+    <div className="w-14 h-14 rounded-2xl overflow-hidden border border-slate-200 shadow animate-pulse">
+      <img src={logo} alt="" className="w-full h-full object-contain" />
+    </div>
+    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Loading…</p>
+  </div>
+);
 
 const KNOWN_PAGES = [
   'home', 'products', 'product-detail', 'shops', 'shop-detail', 'create-shop',
@@ -48,7 +87,7 @@ const routeFromLocation = (): RouteState => {
 };
 
 const Router: React.FC = () => {
-  const { isLoading, products, orders } = useStore();
+  const { products, orders, cartCount } = useStore();
   const [route, setRoute] = useState<RouteState>(() => routeFromLocation());
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -218,16 +257,8 @@ const Router: React.FC = () => {
   const showCategoryBar = ['home', 'products'].includes(route.page);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {isLoading && (
-        <div className="fixed inset-0 z-[60] bg-white flex flex-col items-center justify-center gap-4">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden border border-slate-200 shadow animate-pulse">
-            <img src={logo} alt="" className="w-full h-full object-contain" />
-          </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Connecting to marketplace…</p>
-        </div>
-      )}
-
+    /* Bottom padding clears the mobile bottom nav (+ iOS safe area) */
+    <div className="min-h-screen flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
       <Navbar
         onOpenCart={() => setCartOpen(true)}
         onNavigate={navigate}
@@ -238,7 +269,9 @@ const Router: React.FC = () => {
       )}
 
       <main className="flex-1">
-        {renderPage()}
+        <Suspense fallback={<PageLoader />}>
+          {renderPage()}
+        </Suspense>
       </main>
 
       <Footer onNavigate={navigate} />
@@ -246,6 +279,16 @@ const Router: React.FC = () => {
       {/* Global Drawers & Modals */}
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} onCheckout={() => navigate('checkout')} />
       <AuthModal />
+
+      {/* Global feedback & mobile nav */}
+      <BottomNav
+        activePage={route.page}
+        cartCount={cartCount}
+        onNavigate={navigate}
+        onOpenCart={() => setCartOpen(true)}
+      />
+      <Toaster />
+      <ConfirmDialogHost />
     </div>
   );
 };

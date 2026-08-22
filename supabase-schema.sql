@@ -386,6 +386,103 @@ DROP POLICY IF EXISTS "profiles_admin_all" ON public.profiles;
 CREATE POLICY "profiles_admin_all" ON public.profiles
   FOR ALL USING (public.is_admin());
 
+-- SECURITY: RLS is row-level only — the policy above would still let a user
+-- set their own role='admin'. This trigger locks protected columns unless an
+-- admin (or SQL-editor/service-role maintenance, where auth.uid() IS NULL)
+-- performs the change. See supabase-security-patch-001.sql for full docs.
+CREATE OR REPLACE FUNCTION public.guard_profile_privileges()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NEW; -- maintenance context (first-admin bootstrap etc.)
+  END IF;
+  IF public.is_admin() THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    RAISE EXCEPTION 'Permission denied: role cannot be changed by users.';
+  END IF;
+  IF NEW.email IS DISTINCT FROM OLD.email THEN
+    RAISE EXCEPTION 'Permission denied: email cannot be changed here.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_guard_profile_privileges ON public.profiles;
+CREATE TRIGGER trg_guard_profile_privileges
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.guard_profile_privileges();
+
+-- Append-only audit trail for sensitive admin actions.
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  actor_id    UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  action      TEXT NOT NULL,
+  target_type TEXT,
+  target_id   TEXT,
+  details     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "audit_admin_read_only" ON public.admin_audit_logs;
+CREATE POLICY "audit_admin_read_only" ON public.admin_audit_logs
+  FOR SELECT USING (public.is_admin());
+
+-- No INSERT/UPDATE/DELETE policies on purpose: writes go through definer code.
+
+CREATE OR REPLACE FUNCTION public.log_admin_action(
+  p_action      TEXT,
+  p_target_type TEXT DEFAULT NULL,
+  p_target_id   TEXT DEFAULT NULL,
+  p_details     JSONB DEFAULT '{}'::jsonb
+) RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can write audit entries.';
+  END IF;
+  INSERT INTO public.admin_audit_logs (actor_id, action, target_type, target_id, details)
+  VALUES (auth.uid(), p_action, p_target_type, p_target_id, p_details);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.audit_profile_role_change()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    INSERT INTO public.admin_audit_logs (actor_id, action, target_type, target_id, details)
+    VALUES (
+      CASE WHEN public.is_admin() AND auth.uid() IS NOT NULL THEN auth.uid() ELSE NULL END,
+      'profile.role_changed',
+      'profile',
+      NEW.id::TEXT,
+      jsonb_build_object('old_role', OLD.role, 'new_role', NEW.role,
+                         'via', CASE WHEN auth.uid() IS NULL THEN 'sql_editor/service_role' ELSE 'app' END)
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_audit_profile_role ON public.profiles;
+CREATE TRIGGER trg_audit_profile_role
+  AFTER UPDATE OF role ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.audit_profile_role_change();
+
 -- ------------------------------ SHOPS ---------------------------------------
 DROP POLICY IF EXISTS "shops_public_read_active" ON public.shops;
 CREATE POLICY "shops_public_read_active" ON public.shops

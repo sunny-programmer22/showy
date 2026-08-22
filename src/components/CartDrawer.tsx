@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight, Store } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { EmptyState } from './ui/EmptyState';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -10,6 +11,16 @@ interface CartDrawerProps {
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheckout }) => {
   const { cart, removeFromCart, updateCartQuantity, cartTotal, shops } = useStore();
+
+  // Close on Escape (a11y)
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   // Group items by shop for multi-vendor clarity
   const itemsByShop = cart.reduce<Record<string, typeof cart>>((acc, item) => {
@@ -29,7 +40,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${
+      <div role="dialog" aria-modal="true" aria-label="Shopping cart" className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
         {/* Header */}
@@ -38,22 +49,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
             <ShoppingBag className="w-5 h-5 text-brand-600" />
             <h2 className="font-extrabold text-lg text-slate-900">Your Cart</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} aria-label="Close cart" className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X className="w-5 h-5" /></button>
         </div>
 
         {/* Cart Items grouped by shop */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {cart.length === 0 ? (
-            <div className="text-center py-20 space-y-3">
-              <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                <ShoppingBag className="w-8 h-8 text-slate-300" />
-              </div>
-              <p className="text-sm font-semibold text-slate-500">Your cart is empty</p>
-              <p className="text-xs text-slate-400">Browse products and add items to get started!</p>
-              <button onClick={onClose} className="mt-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition">
-                Start Shopping
-              </button>
-            </div>
+            <EmptyState
+              icon={ShoppingBag}
+              title="Your cart is empty"
+              description="Browse products and add items to get started!"
+              actionLabel="Start Shopping"
+              onAction={onClose}
+            />
           ) : (
             Object.entries(itemsByShop).map(([shopId, items]) => (
               <div key={shopId} className="space-y-3">
@@ -72,14 +80,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
 
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
-                            <button onClick={() => updateCartQuantity(product.id, quantity - 1)}
+                            <button onClick={() => updateCartQuantity(product.id, quantity - 1)} aria-label={`Decrease ${product.title} quantity`}
                               className="p-1.5 hover:bg-slate-50 transition"><Minus className="w-3 h-3" /></button>
                             <span className="px-3 text-xs font-bold">{quantity}</span>
                             <button onClick={() => updateCartQuantity(product.id, Math.min(product.stock, quantity + 1))}
-                              disabled={quantity >= product.stock}
+                              disabled={quantity >= product.stock} aria-label={`Increase ${product.title} quantity`}
                               className="p-1.5 hover:bg-slate-50 transition disabled:opacity-30"><Plus className="w-3 h-3" /></button>
                           </div>
-                          <button onClick={() => removeFromCart(product.id)}
+                          <button onClick={() => removeFromCart(product.id)} aria-label={`Remove ${product.title} from cart`}
                             className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </div>

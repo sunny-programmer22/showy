@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, MapPin, CreditCard, Truck, ShieldCheck, Check, ChevronRight, UserPlus, Loader2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { PaymentGatewayModal } from '../components/PaymentGatewayModal';
+import { toast } from '../components/ui/Toast';
 import { Order, PaymentMethod, ShippingAddress } from '../types';
 
 interface CheckoutPageProps {
@@ -66,7 +67,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
 
   const validateShippingForm = (): boolean => {
     if (!form.fullName.trim() || !/^01\d{9}$/.test(form.phone.replace(/\s/g, '')) || !form.address.trim() || !form.city.trim()) {
-      alert('Please fill in your full name, valid phone (11-digit starting with 01), address and city.');
+      toast.error('Please fill in your full name, valid phone (11-digit starting with 01), address and city.');
       return false;
     }
     return true;
@@ -90,7 +91,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
       const order = await placeOrder(form, paymentMethod, trxId);
       onOrderPlaced(order);
     } catch (e: any) {
-      alert(`Order failed: ${e.message}. Please try again.`);
+      toast.error(`Order failed: ${e.message}. Please try again.`);
     } finally {
       setPlacing(false);
     }

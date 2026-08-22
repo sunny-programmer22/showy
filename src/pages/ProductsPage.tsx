@@ -3,6 +3,8 @@ import { SearchX, PackageSearch } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { ProductCard } from '../components/ProductCard';
+import { ProductCardSkeleton } from '../components/ui/Skeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 import { Product } from '../types';
 
 interface ProductsPageProps {
@@ -15,9 +17,10 @@ type SortKey = 'popular' | 'price-asc' | 'price-desc' | 'newest' | 'rating';
 export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onNavigateToShop }) => {
   const {
     products, searchQuery, setSearchQuery,
-    selectedCategory, selectedShopId, priceRange
+    selectedCategory, selectedShopId, priceRange, isLoading
   } = useStore();
   const [sortBy, setSortBy] = React.useState<SortKey>('popular');
+  const dataLoading = isLoading && products.length === 0;
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -83,28 +86,27 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onN
             </select>
           </div>
 
-          {filtered.length === 0 ? (
-            <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-slate-300 space-y-4">
-              {searchQuery ? (
-                <>
-                  <SearchX className="w-12 h-12 text-slate-300 mx-auto" />
-                  <p className="font-bold text-slate-600">No matches for "{searchQuery}"</p>
-                  <button onClick={() => setSearchQuery('')} className="text-xs font-extrabold text-brand-600 hover:underline">
-                    Clear search
-                  </button>
-                </>
-              ) : (
-                <>
-                  <PackageSearch className="w-12 h-12 text-slate-300 mx-auto" />
-                  <p className="font-bold text-slate-600">No products match these filters</p>
-                </>
-              )}
+          {filtered.length === 0 && !dataLoading ? (
+            <div className="bg-white rounded-3xl border border-dashed border-slate-300">
+              <EmptyState
+                icon={searchQuery ? SearchX : PackageSearch}
+                title={searchQuery ? `No matches for "${searchQuery}"` : 'No products match these filters'}
+                description={
+                  searchQuery
+                    ? 'Try a different keyword, or clear the search to browse everything.'
+                    : 'Try widening your price range or clearing a category/shop filter.'
+                }
+                actionLabel={searchQuery ? 'Clear search' : undefined}
+                onAction={searchQuery ? () => setSearchQuery('') : undefined}
+              />
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filtered.map((p) => (
-                <ProductCard key={p.id} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
-              ))}
+              {dataLoading
+                ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                : filtered.map((p) => (
+                    <ProductCard key={p.id} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
+                  ))}
             </div>
           )}
         </div>

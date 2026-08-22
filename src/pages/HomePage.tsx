@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
+import { ProductCardSkeleton, Skeleton } from '../components/ui/Skeleton';
 import { Product } from '../types';
 import poster from '../assets/poster.png';
 
@@ -15,9 +16,10 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateToShop, onNavigate }) => {
-  const { products, shops, currentUser } = useStore();
+  const { products, shops, currentUser, isLoading } = useStore();
 
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
+  const dataLoading = isLoading && products.length === 0;
 
   const featured = products.filter((p) => p.is_featured && p.is_active).slice(0, 4);
   const newest = [...products].filter((p) => p.is_active).sort(
@@ -159,9 +161,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {newest.map((p) => (
-            <ProductCard key={p.id} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
-          ))}
+          {dataLoading
+            ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
+            : newest.map((p) => (
+                <ProductCard key={p.id} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
+              ))}
         </div>
       </section>
 
@@ -177,7 +181,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {activeShops.slice(0, 3).map((shop) => (
+          {dataLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                  <Skeleton className="h-24 rounded-none" />
+                  <div className="pt-7 p-5 space-y-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                </div>
+              ))
+            : activeShops.slice(0, 3).map((shop) => (
             <div key={shop.id} onClick={() => onNavigateToShop(shop.id)}
               className="group cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all">
               <div className="h-24 relative">

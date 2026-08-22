@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, LogIn, UserPlus, MailCheck, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -11,6 +11,16 @@ export const AuthModal: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirmSent, setConfirmSent] = useState(false);
+
+  // Close on Escape (a11y)
+  useEffect(() => {
+    if (!authModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAuthModalOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [authModalOpen, setAuthModalOpen]);
 
   if (!authModalOpen) return null;
 
@@ -46,13 +56,19 @@ export const AuthModal: React.FC = () => {
   const inputCls = 'w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-300 transition';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn"
+      role="dialog"
+      aria-modal="true"
+      aria-label={mode === 'login' ? 'Sign in to Showy' : 'Create your Showy account'}
+      onMouseDown={(e) => e.target === e.currentTarget && close()}
+    >
       <div className="w-full max-w-md bg-white rounded-3xl shadow-lift overflow-hidden border border-white/40 animate-pop-in">
         <div className="flex">
           {/* Brand panel */}
           <div className="hidden sm:flex w-36 shrink-0 flex-col justify-between relative overflow-hidden bg-gradient-to-br from-slate-900 via-brand-800 to-brand-600 p-5">
             <div className="pointer-events-none absolute -top-10 -right-10 w-36 h-36 bg-brand-400/30 blur-2xl rounded-full" />
-            <button onClick={close} className="absolute right-2.5 top-2.5 p-1 hover:bg-white/15 rounded-lg transition z-10">
+            <button onClick={close} aria-label="Close sign in window" className="absolute right-2.5 top-2.5 p-1 hover:bg-white/15 rounded-lg transition z-10">
               <X className="w-4 h-4 text-white" />
             </button>
             <div className="relative p-2.5 w-fit bg-white/10 border border-white/20 rounded-xl backdrop-blur">
@@ -69,7 +85,7 @@ export const AuthModal: React.FC = () => {
           <div className="flex-1 min-w-0">
             {/* Mobile header */}
             <div className="sm:hidden relative bg-gradient-to-r from-brand-600 to-brand-700 p-5 text-white">
-              <button onClick={close} className="absolute right-3.5 top-3.5 p-1 hover:bg-white/20 rounded-lg transition">
+              <button onClick={close} aria-label="Close sign in window" className="absolute right-3.5 top-3.5 p-1 hover:bg-white/20 rounded-lg transition">
                 <X className="w-5 h-5" />
               </button>
               <h2 className="font-display text-lg font-extrabold tracking-tight">
@@ -122,7 +138,7 @@ export const AuthModal: React.FC = () => {
                 </div>
 
                 {error && (
-                  <p className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 animate-pop-in">
+                  <p role="alert" className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 animate-pop-in">
                     {error}
                   </p>
                 )}

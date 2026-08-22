@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, ShieldCheck, Loader2, CheckCircle2, X, KeyRound, MessageSquare } from 'lucide-react';
+import { toast } from './ui/Toast';
 
 interface PaymentGatewayModalProps {
   isOpen: boolean;
@@ -45,6 +46,16 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
     }
   }, [step, countdown]);
 
+  // Close on Escape (a11y)
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !method) return null;
 
   const isBkash = method === 'bkash';
@@ -53,7 +64,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
 
   const handlePhoneSubmit = () => {
     if (!/^01\d{9}$/.test(phone)) {
-      alert('Please enter a valid 11-digit mobile number starting with 01.');
+      toast.error('Please enter a valid 11-digit mobile number starting with 01.');
       return;
     }
     // Simulate the gateway sending an SMS OTP to the user's phone
@@ -65,7 +76,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
 
   const handleOtpSubmit = () => {
     if (otp !== generatedOtp) {
-      alert('Invalid OTP. Please check the code and try again.');
+      toast.error('Invalid OTP. Please check the code and try again.');
       return;
     }
     setStep('pin');
@@ -75,12 +86,12 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
     setCountdown(60);
-    alert(`New OTP sent to ${phone}: ${code}`);
+    toast.info(`New OTP sent to ${phone}. Check the SMS preview above.`);
   };
 
   const handlePinSubmit = () => {
     if (pin.length < 4) {
-      alert(`${brandName} PIN must be at least 4 digits.`);
+      toast.error(`${brandName} PIN must be at least 4 digits.`);
       return;
     }
     setStep('processing');
@@ -95,11 +106,19 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${brandName} secure checkout`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && step !== 'processing') onClose();
+      }}
+    >
       <div className={`relative w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden ${brandColor}`}>
         {/* Gateway Header */}
         <div className={`${brandColor} text-white p-5 relative`}>
-          <button onClick={onClose} className="absolute right-4 top-4 p-1 hover:bg-white/20 rounded-lg transition">
+          <button onClick={onClose} aria-label="Close payment window" className="absolute right-4 top-4 p-1 hover:bg-white/20 rounded-lg transition">
             <X className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-3">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Store, ArrowLeft, ArrowRight, Check, Upload, Sparkles, ShieldCheck, ImagePlus } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { uploadImage } from '../lib/api';
+import { toast } from '../components/ui/Toast';
 
 interface CreateShopPageProps {
   onBack: () => void;
@@ -34,18 +35,18 @@ export const CreateShopPage: React.FC<CreateShopPageProps> = ({ onBack, onCreate
   };
 
   const handleFileUpload = async (file: File, field: 'logo_url' | 'banner_url') => {
-    if (!currentUser) return alert('Please sign in first.');
+    if (!currentUser) return toast.error('Please sign in first.');
     try {
       const url = await uploadImage(file, currentUser.id);
       handleInputChange(field, url);
     } catch (e: any) {
-      alert(`Image upload failed: ${e.message}`);
+      toast.error(`Image upload failed: ${e.message}`);
     }
   };
 
   const handleSubmit = async () => {
-    if (!currentUser) return alert('Please sign in to create a shop.');
-    if (!form.name.trim()) return alert('Shop name is required.');
+    if (!currentUser) return toast.error('Please sign in to create a shop.');
+    if (!form.name.trim()) return toast.error('Shop name is required.');
 
     setBusy(true);
     try {
@@ -65,7 +66,7 @@ export const CreateShopPage: React.FC<CreateShopPageProps> = ({ onBack, onCreate
       setStep(3);
       setTimeout(() => onCreated(newShop.id), 1800);
     } catch (e: any) {
-      alert(`Could not create shop: ${e.message}`);
+      toast.error(`Could not create shop: ${e.message}`);
     } finally {
       setBusy(false);
     }

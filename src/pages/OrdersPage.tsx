@@ -1,6 +1,8 @@
 import React from 'react';
 import { Package, CheckCircle2, Truck, Clock, XCircle, ChevronDown } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Skeleton } from '../components/ui/Skeleton';
 import { Order, OrderStatus } from '../types';
 
 interface OrdersPageProps {
@@ -15,24 +17,48 @@ const STATUS_STEPS: { key: OrderStatus; label: string; icon: any }[] = [
 ];
 
 export const OrdersPage: React.FC<OrdersPageProps> = ({ onBack }) => {
-  const { orders, currentUser } = useStore();
+  const { orders, currentUser, isLoading } = useStore();
 
   // Customers see their own orders
   const myOrders = currentUser?.role === 'customer'
     ? orders.filter((o) => o.customer_id === currentUser.id)
     : orders; // admin sees all
 
+  // Avoid flashing "no orders" while the session & data resolve
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <Skeleton className="h-10 w-72" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-11 h-11 !rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-60" />
+              </div>
+            </div>
+            <Skeleton className="h-20 w-full" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (myOrders.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-4">
-        <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-          <Package className="w-8 h-8 text-slate-300" />
-        </div>
-        <h1 className="text-xl font-extrabold text-slate-900">No orders yet</h1>
-        <p className="text-sm text-slate-500">When you place an order it will appear here with live tracking.</p>
-        <button onClick={onBack} className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition">
-          Start Shopping
-        </button>
+      <div className="max-w-2xl mx-auto px-4 py-10">
+        <EmptyState
+          icon={Package}
+          title="No orders yet"
+          description="When you place an order it will appear here with live tracking."
+          actionLabel="Start Shopping"
+          onAction={onBack}
+        />
       </div>
     );
   }

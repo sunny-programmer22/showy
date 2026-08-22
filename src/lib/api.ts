@@ -335,9 +335,30 @@ export const apiUpdatePayoutStatus = async (
 
 /* ------------------------------ Storage --------------------------------- */
 
+/** Whitelist of accepted upload types → canonical extension.
+ *  The stored path uses THIS extension, never the raw filename. */
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif'
+};
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export const uploadImage = async (file: File, userId: string): Promise<string> => {
+  const ext = ALLOWED_IMAGE_TYPES[file.type];
+  if (!ext) {
+    throw new Error('Unsupported image type. Please use JPG, PNG, WebP or GIF.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error('Image is too large. Maximum size is 5 MB.');
+  }
+  if (file.size === 0) {
+    throw new Error('That file appears to be empty.');
+  }
+
   const sb = requireClient();
-  const ext = file.name.split('.').pop() || 'jpg';
   const path = `${userId}/${Date.now()}.${ext}`;
   const { error } = await sb.storage.from('media').upload(path, file, { upsert: true });
   if (error) throw new Error(error.message);

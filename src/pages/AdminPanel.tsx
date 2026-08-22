@@ -4,6 +4,8 @@ import {
   Package, Wallet, CheckCircle2, XCircle, BadgePercent
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { toast } from '../components/ui/Toast';
+import { confirmDialog } from '../components/ui/ConfirmDialog';
 
 interface AdminPanelProps {
   onNavigate: (page: string) => void;
@@ -189,7 +191,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                     </td>
                     <td className="px-5 py-3 text-right">
                       {!shop.is_admin_shop && (
-                        <button onClick={() => toggleShopActive(shop.id).catch((err) => alert(`Action failed: ${err.message}`))}
+                        <button onClick={() => {
+                          if (shop.is_active) {
+                            confirmDialog({
+                              title: 'Suspend this shop?',
+                              message: `"${shop.name}" will disappear from the marketplace until reactivated.`,
+                              confirmText: 'Suspend Shop',
+                              danger: true
+                            }).then((ok) => {
+                              if (ok) toggleShopActive(shop.id).catch((err) => toast.error(`Action failed: ${err.message}`));
+                            });
+                          } else {
+                            toggleShopActive(shop.id)
+                              .then(() => toast.success(`"${shop.name}" is live again.`))
+                              .catch((err) => toast.error(`Action failed: ${err.message}`));
+                          }
+                        }}
                           className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase transition ${
                             shop.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-600 hover:bg-rose-200'
                           }`}>
@@ -264,11 +281,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                 <div className="ml-auto flex items-center gap-2">
                   {pr.status === 'pending' ? (
                     <>
-                      <button onClick={() => approvePayout(pr.id).then(() => alert('Marked as transferred — vendor wallet settled.')).catch((err) => alert(`Approval failed: ${err.message}`))}
+                      <button onClick={() => approvePayout(pr.id)
+                          .then(() => toast.success('Marked as transferred — vendor wallet settled.'))
+                          .catch((err) => toast.error(`Approval failed: ${err.message}`))}
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold uppercase transition shadow-sm">
                         Approve & Transfer
                       </button>
-                      <button onClick={() => rejectPayout(pr.id).then(() => alert('Request rejected — funds returned to vendor balance.')).catch((err) => alert(`Rejection failed: ${err.message}`))}
+                      <button onClick={async () => {
+                          const ok = await confirmDialog({
+                            title: 'Reject this payout?',
+                            message: `৳${pr.amount.toLocaleString()} will be returned to ${pr.shop_name}'s available balance.`,
+                            confirmText: 'Reject Request',
+                            danger: true
+                          });
+                          if (!ok) return;
+                          try {
+                            await rejectPayout(pr.id);
+                            toast.success('Request rejected — funds returned to vendor balance.');
+                          } catch (err: any) {
+                            toast.error(`Rejection failed: ${err.message}`);
+                          }
+                        }}
                         className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[10px] font-extrabold uppercase transition">Reject</button>
                     </>
                   ) : (

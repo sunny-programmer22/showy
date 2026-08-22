@@ -5,6 +5,8 @@ import {
   BadgePercent, CheckCircle2, Loader2
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { toast } from '../components/ui/Toast';
+import { confirmDialog } from '../components/ui/ConfirmDialog';
 
 interface VendorDashboardProps {
   onNavigate: (page: string) => void;
@@ -151,17 +153,28 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                       <td className="px-4 py-3 font-extrabold text-slate-800">৳{(p.discount_price ?? p.price).toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <input type="number" min={0} value={p.stock}
-                          onChange={(e) => updateProduct(p.id, { stock: Number(e.target.value) }).catch((err) => alert(`Update failed: ${err.message}`))}
+                          onChange={(e) => updateProduct(p.id, { stock: Number(e.target.value) }).catch((err) => toast.error(`Update failed: ${err.message}`))}
                           className={`w-20 px-2 py-1.5 rounded-lg border text-center font-bold ${p.stock <= 5 ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200'}`} />
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => updateProduct(p.id, { is_active: !p.is_active }).catch((err) => alert(`Update failed: ${err.message}`))}
+                        <button onClick={() => updateProduct(p.id, { is_active: !p.is_active }).catch((err) => toast.error(`Update failed: ${err.message}`))}
                           className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${p.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
                           {p.is_active ? 'Active' : 'Hidden'}
                         </button>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <button onClick={() => { if (confirm(`Delete "${p.title}"?`)) deleteProduct(p.id).catch((err) => alert(`Delete failed: ${err.message}`)); }}
+                        <button onClick={async () => {
+                            const ok = await confirmDialog({
+                              title: 'Delete this product?',
+                              message: `"${p.title}" will be permanently removed from your shop.`,
+                              confirmText: 'Delete Product',
+                              danger: true
+                            });
+                            if (!ok) return;
+                            deleteProduct(p.id)
+                              .then(() => toast.success('Product deleted.'))
+                              .catch((err) => toast.error(`Delete failed: ${err.message}`));
+                          }}
                           className="text-rose-500 hover:text-rose-700 font-bold text-[11px]">Delete</button>
                       </td>
                     </tr>
@@ -201,7 +214,7 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                     <span className="text-[10px] font-bold text-slate-400 uppercase mr-auto">Fulfillment:</span>
                     {(['processing', 'shipped', 'delivered'] as const).map((st) => (
-                      <button key={st} onClick={() => updateOrderStatus(order.id, item.id, st).catch((err) => alert(`Status update failed: ${err.message}`))}
+                      <button key={st} onClick={() => updateOrderStatus(order.id, item.id, st).catch((err) => toast.error(`Status update failed: ${err.message}`))}
                         className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition ${
                           item.status === st ? 'bg-brand-600 text-white shadow-sm'
                           : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
@@ -245,14 +258,14 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
               </select>
               <button onClick={async () => {
                   const amt = Number(payoutAmount);
-                  if (!amt || amt <= 0 || amt > wallet.current_balance) return alert('Enter a valid amount within your balance.');
+                  if (!amt || amt <= 0 || amt > wallet.current_balance) return toast.error('Enter a valid amount within your balance.');
                   setBusyPayout(true);
                   try {
                     await requestPayout(myShop.id, myShop.name, amt, payoutMethod, payoutMethod === 'bkash' ? (myShop.bkash_payout_number ?? '') : payoutMethod === 'nagad' ? (myShop.nagad_payout_number ?? '') : 'Bank Acc.');
                     setPayoutAmount('');
-                    alert('Withdrawal request submitted! Admin will transfer it shortly.');
+                    toast.success('Withdrawal request submitted! Admin will transfer it shortly.');
                   } catch (e: any) {
-                    alert(`Payout request failed: ${e.message}`);
+                    toast.error(`Payout request failed: ${e.message}`);
                   } finally {
                     setBusyPayout(false);
                   }
@@ -298,9 +311,9 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
           onSave={async (data) => {
             try {
               await updateShop(myShop.id, data);
-              alert('Shop settings saved!');
+              toast.success('Shop settings saved!');
             } catch (e: any) {
-              alert(`Save failed: ${e.message}`);
+              toast.error(`Save failed: ${e.message}`);
             }
           }}
         />

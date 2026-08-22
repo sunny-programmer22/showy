@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Store, Star, ShieldCheck, ArrowRight, Search, PlusCircle } from 'lucide-react';
+import { Store, Star, ShieldCheck, ArrowRight, Search, PlusCircle, SearchX } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { Skeleton } from '../components/ui/Skeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface ShopListPageProps {
   onSelectShop: (shopId: string) => void;
@@ -8,10 +10,11 @@ interface ShopListPageProps {
 }
 
 export const ShopListPage: React.FC<ShopListPageProps> = ({ onSelectShop, onNavigate }) => {
-  const { shops, products, currentUser } = useStore();
+  const { shops, products, currentUser, isLoading } = useStore();
   const [shopQuery, setShopQuery] = useState('');
 
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
+  const dataLoading = isLoading && shops.length === 0;
 
   const filteredShops = shops.filter(
     (s) =>
@@ -68,7 +71,38 @@ export const ShopListPage: React.FC<ShopListPageProps> = ({ onSelectShop, onNavi
 
       {/* Shops Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredShops.map((shop) => {
+        {dataLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <Skeleton className="h-32 rounded-none" />
+                <div className="p-5 space-y-3">
+                  <div className="flex items-end justify-between">
+                    <Skeleton className="w-20 h-20 !rounded-2xl" />
+                    <Skeleton className="h-7 w-16" />
+                  </div>
+                  <Skeleton className="h-5 w-1/2" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <div className="pt-3 flex items-center justify-between">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+            ))
+          : filteredShops.length === 0
+          ? (
+            <div className="col-span-full bg-white rounded-3xl border border-dashed border-slate-300">
+              <EmptyState
+                icon={SearchX}
+                title={`No shops found${shopQuery ? ` for "${shopQuery}"` : ''}`}
+                description="Try a different name, or be the first to open a shop here."
+                actionLabel="Create Your Own Shop"
+                onAction={() => onNavigate('create-shop')}
+              />
+            </div>
+          )
+          : filteredShops.map((shop) => {
           const shopProductCount = products.filter((p) => p.shop_id === shop.id).length;
 
           return (
