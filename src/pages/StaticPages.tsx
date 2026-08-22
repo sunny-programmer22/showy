@@ -48,8 +48,8 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 
 const PlaceholderNote: React.FC = () => (
   <p className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800 leading-relaxed">
-    Placeholder notice: Text marked with [brackets] must be replaced with your real business identity,
-    address and contact details before going live. This template is not legal advice — have a lawyer review
+    One detail remains: replace <span className="underline">[Full Registered Address]</span> with your real
+    business address once registered. This template is not legal advice — consider having a lawyer review
     your final Privacy Policy and Terms &amp; Conditions.
   </p>
 );
@@ -100,7 +100,6 @@ export const AboutPage: React.FC<{ onBack: () => void; onNavigate?: (page: strin
         </button>
       </div>
     )}
-    <PlaceholderNote />
   </Shell>
 );
 
@@ -117,7 +116,7 @@ export const ContactPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     e.preventDefault();
     const subject = encodeURIComponent(`Showy support request from ${name || 'a customer'}`);
     const body = encodeURIComponent(`${message}\n\n— ${name} (${email})`);
-    window.location.href = `mailto:[support@yourdomain.com]?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:siddiknurealam1@gmail.com?subject=${subject}&body=${body}`;
     toast.info('Opening your email app…');
   };
 
@@ -125,8 +124,8 @@ export const ContactPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <Shell icon={Mail} title="Contact Us" subtitle="We usually reply within 24 hours" tint="bg-emerald-500/10 text-emerald-600" onBack={onBack}>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
         {[
-          { icon: Mail, label: 'Email', value: '[support@yourdomain.com]' },
-          { icon: Phone, label: 'Hotline', value: '[+880 XXXX XXXXXX]' },
+          { icon: Mail, label: 'Email', value: 'siddiknurealam1@gmail.com' },
+          { icon: Phone, label: 'Hotline', value: '01863875033' },
           { icon: Clock, label: 'Hours', value: 'Sat–Thu, 10am – 7pm' }
         ].map((c) => (
           <div key={c.label} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm text-center">
@@ -148,7 +147,6 @@ export const ContactPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <Send className="w-4 h-4" /> Send Message
         </button>
       </form>
-      <PlaceholderNote />
     </Shell>
   );
 };
@@ -186,11 +184,11 @@ export const FaqPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
 /* -------------------------------- Privacy -------------------------------- */
 
 export const PrivacyPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-  <Shell icon={ShieldCheck} title="Privacy Policy" subtitle="Effective date: [DD Month YYYY]" tint="bg-emerald-500/10 text-emerald-600" onBack={onBack}>
+  <Shell icon={ShieldCheck} title="Privacy Policy" subtitle="Effective date: 22 August 2026" tint="bg-emerald-500/10 text-emerald-600" onBack={onBack}>
     <Section title="1. Who We Are">
       <p>
-        [Your Legal Business Name] ("Showy", "we", "us") operates the showy.jubair.bond marketplace.
-        Registered office: [Full Address], Bangladesh. Contact: [privacy@yourdomain.com].
+        Showy ("Showy", "we", "us") operates the showy.jubair.bond marketplace.
+        Registered office: [Full Registered Address], Bangladesh. Contact: siddiknurealam1@gmail.com · 01863875033.
       </p>
     </Section>
     <Section title="2. Data We Collect">
@@ -211,7 +209,7 @@ export const PrivacyPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
       <p>Data is stored on encrypted Supabase infrastructure with row-level security and admin audit logging. Order records are retained as required for accounting and dispute resolution.</p>
     </Section>
     <Section title="6. Your Rights">
-      <p>You may request access, correction, or deletion of your personal data by emailing [privacy@yourdomain.com]. Deleting an account removes profile data; completed order records may be retained legally.</p>
+      <p>You may request access, correction, or deletion of your personal data by emailing siddiknurealam1@gmail.com. Deleting an account removes profile data; completed order records may be retained legally.</p>
     </Section>
     <PlaceholderNote />
   </Shell>
@@ -220,11 +218,11 @@ export const PrivacyPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
 /* --------------------------------- Terms ---------------------------------- */
 
 export const TermsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-  <Shell icon={FileText} title="Terms & Conditions" subtitle="Last updated: [DD Month YYYY]" tint="bg-amber-500/10 text-amber-600" onBack={onBack}>
+  <Shell icon={FileText} title="Terms & Conditions" subtitle="Last updated: 22 August 2026" tint="bg-amber-500/10 text-amber-600" onBack={onBack}>
     <Section title="1. Agreement">
       <p>
-        By using Showy ([yourdomain.com]) you agree to these terms with [Your Legal Business Name],
-        [Address], Bangladesh ([contact@yourdomain.com]). If you do not agree, please do not use the platform.
+        By using Showy (showy.jubair.bond) you agree to these terms with Showy,
+        [Full Registered Address], Bangladesh (siddiknurealam1@gmail.com · 01863875033). If you do not agree, please do not use the platform.
       </p>
     </Section>
     <Section title="2. Accounts & Eligibility">
@@ -237,7 +235,7 @@ export const TermsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
       <p>Prices are in Bangladeshi Taka (৳). Payments are processed via bKash/Nagad OTP, cards, or cash on delivery. Payment confirms the order; a transaction ID is issued for each purchase.</p>
     </Section>
     <Section title="5. Shipping, Returns & Disputes">
-      <p>Sellers dispatch per stated timelines. Products carry a 7-day return window unless listed as final sale. Report issues within the window via the Orders page or [support@yourdomain.com]; we mediate disputes between buyers and sellers in good faith.</p>
+      <p>Sellers dispatch per stated timelines. Products carry a 7-day return window unless listed as final sale. Report issues within the window via the Orders page or siddiknurealam1@gmail.com; we mediate disputes between buyers and sellers in good faith.</p>
     </Section>
     <Section title="6. Prohibited Use">
       <p>Listings and behaviour violating Bangladeshi law — counterfeit goods, weapons, drugs, adult content, fraudulent listings, or abuse of other users — are prohibited and removed without notice.</p>
@@ -246,7 +244,7 @@ export const TermsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
       <p>The service is provided "as is". To the maximum extent permitted by law, Showy's aggregate liability for any claim is limited to the commission earned on the relevant order. Nothing limits liability that cannot be limited by law.</p>
     </Section>
     <Section title="8. Governing Law & Changes">
-      <p>These terms are governed by the laws of Bangladesh, courts of [City] having exclusive jurisdiction. We may update these terms; material changes will be announced on the site with a revised effective date.</p>
+      <p>These terms are governed by the laws of Bangladesh, courts of Dhaka having exclusive jurisdiction. We may update these terms; material changes will be announced on the site with a revised effective date.</p>
     </Section>
     <PlaceholderNote />
   </Shell>
