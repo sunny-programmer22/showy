@@ -120,6 +120,8 @@ export interface Order {
   shipping_address: ShippingAddress;
   total_amount: number;
   platform_fee_total: number;
+  discount_amount?: number;
+  coupon_code?: string | null;
   payment_method: PaymentMethod;
   payment_status: 'pending' | 'paid' | 'failed';
   transaction_id: string;
@@ -149,3 +151,28 @@ export interface PayoutRequest {
   created_at: string;
   updated_at?: string;
 }
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  min_order_amount: number;
+  max_discount?: number | null;
+  usage_limit?: number | null;
+  used_count: number;
+  is_active: boolean;
+  expires_at?: string | null;
+  created_at: string;
+}
+
+export const couponDiscountFor = (coupon: Coupon, orderAmount: number): number => {
+  if (!coupon.is_active) return 0;
+  if (orderAmount < coupon.min_order_amount) return 0;
+  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return 0;
+  if (coupon.usage_limit != null && coupon.used_count >= coupon.usage_limit) return 0;
+  const raw = coupon.discount_type === 'percent'
+    ? (orderAmount * coupon.discount_value) / 100
+    : coupon.discount_value;
+  return Math.min(Math.round(raw), orderAmount);
+};

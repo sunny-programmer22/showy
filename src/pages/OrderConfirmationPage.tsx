@@ -113,7 +113,13 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
           {/* Totals */}
           <div className="pt-4 border-t border-dashed border-slate-200 space-y-1.5 text-sm">
-            <div className="flex justify-between text-slate-600"><span>Items Subtotal</span><span>৳{order.total_amount.toLocaleString()}</span></div>
+            <div className="flex justify-between text-slate-600"><span>Items Subtotal</span><span>৳{(order.total_amount + (order.discount_amount ?? 0)).toLocaleString()}</span></div>
+            {(order.discount_amount ?? 0) > 0 && (
+              <div className="flex justify-between text-emerald-600 font-bold">
+                <span>Coupon {order.coupon_code ? `(${order.coupon_code})` : 'Discount'}</span>
+                <span>−৳{(order.discount_amount ?? 0).toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between text-slate-600"><span>Delivery</span><span>৳80</span></div>
             <div className="flex justify-between font-extrabold text-base pt-1">
               <span>Total Paid</span><span className="text-emerald-600">৳{(order.total_amount + 80).toLocaleString()}</span>

@@ -788,3 +788,56 @@ CREATE POLICY "variants_owner_delete" ON public.product_variants
   );
 
 ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS variant_label TEXT;
+
+-- ============================================================================
+-- SECTION 9: COUPONS / PROMOTIONS
+-- Mirrors supabase-coupons-patch-003.sql - keep both in sync.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.coupons (
+  id               UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
+  code             TEXT NOT NULL UNIQUE,
+  discount_type    TEXT NOT NULL DEFAULT 'percent' CHECK (discount_type IN ('percent', 'fixed')),
+  discount_value   NUMERIC(12,2) NOT NULL CHECK (discount_value > 0),
+  min_order_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  max_discount     NUMERIC(12,2),
+  usage_limit      INTEGER,
+  used_count       INTEGER NOT NULL DEFAULT 0,
+  is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+  expires_at       TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "coupons_public_read" ON public.coupons;
+CREATE POLICY "coupons_public_read" ON public.coupons
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "coupons_admin_write" ON public.coupons;
+CREATE POLICY "coupons_admin_write" ON public.coupons
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS coupon_code TEXT;
+
+CREATE OR REPLACE FUNCTION public.bump_coupon_usage()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.coupon_code IS NOT NULL AND NEW.discount_amount > 0 THEN
+    UPDATE public.coupons
+       SET used_count = used_count + 1
+     WHERE code = UPPER(NEW.coupon_code);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_bump_coupon_usage ON public.orders;
+CREATE TRIGGER trg_bump_coupon_usage
+  AFTER INSERT ON public.orders
+  FOR EACH ROW EXECUTE FUNCTION public.bump_coupon_usage();

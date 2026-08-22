@@ -44,7 +44,7 @@ interface StoreContextType {
 
   // Orders
   orders: Order[];
-  placeOrder: (shipping: any, paymentMethod: PaymentMethod, transactionId?: string) => Promise<Order>;
+  placeOrder: (shipping: any, paymentMethod: PaymentMethod, transactionId?: string, discount?: { amount: number; code: string }) => Promise<Order>;
   updateOrderStatus: (orderId: string, itemId: string, status: OrderItem['status']) => Promise<void>;
 
   // Financials & Commission (5% split engine)
@@ -357,7 +357,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const placeOrder = async (
     shipping: any,
     paymentMethod: PaymentMethod,
-    transactionId?: string
+    transactionId?: string,
+    discount?: { amount: number; code: string }
   ): Promise<Order> => {
     if (!currentUser) throw new Error('Please sign in to place an order.');
 
@@ -371,7 +372,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cart,
         shops,
         paymentMethod,
-        transactionId
+        transactionId,
+        discount
       );
       setOrders((prev) => [order, ...prev]);
 
@@ -440,8 +442,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       customer_email: shipping.email,
       customer_phone: shipping.phone,
       shipping_address: shipping,
-      total_amount: cartTotal,
+      total_amount: Math.max(0, cartTotal - (discount?.amount ?? 0)),
       platform_fee_total: platformFeeTotal,
+      discount_amount: discount?.amount ?? 0,
+      coupon_code: discount?.code.toUpperCase() ?? null,
       payment_method: paymentMethod,
       payment_status: paymentMethod === 'cod' ? 'pending' : 'paid',
       transaction_id: transactionId || `TXN${Math.random().toString(36).substring(2, 10).toUpperCase()}`,

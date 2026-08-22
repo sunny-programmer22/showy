@@ -1,25 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert, TrendingUp, Percent, Store as StoreIcon, Users,
-  Package, Wallet, CheckCircle2, XCircle, BadgePercent
+  Package, Wallet, CheckCircle2, XCircle, BadgePercent,
+  TicketPercent, ScrollText, Plus, Trash2, Power
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { toast } from '../components/ui/Toast';
 import { confirmDialog } from '../components/ui/ConfirmDialog';
+import * as api from '../lib/api';
+import { Coupon } from '../types';
 
 interface AdminPanelProps {
   onNavigate: (page: string) => void;
 }
 
-type Tab = 'overview' | 'shops' | 'orders' | 'payouts';
+type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'coupons' | 'security';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
   const {
     shops, products, orders, users,
-    platformAdminEarnings, toggleShopActive, payoutRequests, approvePayout, rejectPayout
+    platformAdminEarnings, toggleShopActive, payoutRequests, approvePayout, rejectPayout,
+    isLiveMode
   } = useStore();
 
   const [tab, setTab] = useState<Tab>('overview');
+
+  /* ------------------------------ Coupons ------------------------------ */
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [creatingCoupon, setCreatingCoupon] = useState(false);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discount_type: 'percent' as 'percent' | 'fixed',
+    value: '',
+    min_amount: '',
+    max_discount: '',
+    usage_limit: '',
+    expires_at: ''
+  });
+
+  /* ---------------------------- Audit logs ----------------------------- */
+  const [auditLogs, setAuditLogs] = useState<api.AuditLogEntry[]>([]);
+
+  useEffect(() => {
+    if (!isLiveMode) return;
+    if (tab === 'coupons') {
+      api.fetchCoupons().then(setCoupons).catch((e: any) => toast.error(e.message));
+    }
+    if (tab === 'security') {
+      api.fetchAuditLogs().then(setAuditLogs).catch((e: any) => toast.error(e.message));
+    }
+  }, [tab, isLiveMode]);
+
+  const handleCreateCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponForm.code.trim() || !couponForm.value) {
+      toast.error('Coupon code and discount value are required.');
+      return;
+    }
+    setCreatingCoupon(true);
+    try {
+      const created = await api.apiInsertCoupon({
+        code: couponForm.code,
+        discount_type: couponForm.discount_type,
+        discount_value: Number(couponForm.value),
+        min_order_amount: couponForm.min_amount ? Number(couponForm.min_amount) : 0,
+        max_discount: couponForm.max_discount ? Number(couponForm.max_discount) : null,
+        usage_limit: couponForm.usage_limit ? Number(couponForm.usage_limit) : null,
+        expires_at: couponForm.expires_at || null
+      });
+      setCoupons((prev) => [created, ...prev]);
+      setCouponForm({ code: '', discount_type: 'percent', value: '', min_amount: '', max_discount: '', usage_limit: '', expires_at: '' });
+      toast.success(`Coupon ${created.code} created.`);
+    } catch (err: any) {
+      toast.error(`Create failed: ${err.message}`);
+    } finally {
+      setCreatingCoupon(false);
+    }
+  };
 
   const adminShop = shops.find((s) => s.is_admin_shop);
   const vendorShops = shops.filter((s) => !s.is_admin_shop);
@@ -34,7 +91,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
     { key: 'overview', label: 'Platform Overview', icon: TrendingUp },
     { key: 'shops', label: 'Shop Management', icon: StoreIcon },
     { key: 'orders', label: 'Global Orders', icon: Package },
-    { key: 'payouts', label: 'Vendor Payouts', icon: Wallet }
+    { key: 'payouts', label: 'Vendor Payouts', icon: Wallet },
+    { key: 'coupons', label: 'Coupons & Promos', icon: TicketPercent },
+    { key: 'security', label: 'Security Log', icon: ScrollText }
   ];
 
   return (
@@ -309,6 +368,165 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                       pr.status === 'transferred' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
                     }`}>{pr.status}</span>
                   )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+      {/* COUPONS */}
+      {tab === 'coupons' && (
+        <div className="space-y-5">
+          {!isLiveMode ? (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800">
+              Coupons require live Supabase mode. Run supabase-coupons-patch-003.sql first.
+            </div>
+          ) : (
+            <>
+              <form onSubmit={handleCreateCoupon} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wide flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-purple-600" /> Create Coupon
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <input type="text" value={couponForm.code}
+                    onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                    placeholder="CODE" aria-label="Coupon code"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-bold uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <select value={couponForm.discount_type}
+                    onChange={(e) => setCouponForm({ ...couponForm, discount_type: e.target.value as 'percent' | 'fixed' })}
+                    aria-label="Discount type"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="percent">% off</option>
+                    <option value="fixed">৳ fixed</option>
+                  </select>
+                  <input type="number" min="0" step="0.01" value={couponForm.value}
+                    onChange={(e) => setCouponForm({ ...couponForm, value: e.target.value })}
+                    placeholder={couponForm.discount_type === 'percent' ? 'Discount %' : 'Discount ৳'} aria-label="Discount value"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <input type="number" min="0" step="0.01" value={couponForm.min_amount}
+                    onChange={(e) => setCouponForm({ ...couponForm, min_amount: e.target.value })}
+                    placeholder="Min order ৳" aria-label="Minimum order amount"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <input type="number" min="0" step="0.01" value={couponForm.max_discount}
+                    onChange={(e) => setCouponForm({ ...couponForm, max_discount: e.target.value })}
+                    placeholder="Max cap ৳ (% only)" aria-label="Maximum discount cap"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <input type="number" min="0" value={couponForm.usage_limit}
+                    onChange={(e) => setCouponForm({ ...couponForm, usage_limit: e.target.value })}
+                    placeholder="Usage limit" aria-label="Usage limit"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <input type="date" value={couponForm.expires_at}
+                    onChange={(e) => setCouponForm({ ...couponForm, expires_at: e.target.value })}
+                    aria-label="Expiry date"
+                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <button type="submit" disabled={creatingCoupon}
+                    className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                    <Plus className="w-4 h-4" /> {creatingCoupon ? 'Creating…' : 'Create'}
+                  </button>
+                </div>
+              </form>
+
+              {coupons.length === 0 ? (
+                <div className="text-center py-14 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                  <TicketPercent className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-500">No coupons yet</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase tracking-wide text-[10px]">
+                      <tr>
+                        <th className="text-left px-5 py-3 font-bold">Code</th>
+                        <th className="text-left px-4 py-3 font-bold">Discount</th>
+                        <th className="text-left px-4 py-3 font-bold">Rules</th>
+                        <th className="text-left px-4 py-3 font-bold">Used</th>
+                        <th className="text-right px-5 py-3 font-bold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {coupons.map((c) => (
+                        <tr key={c.id} className="hover:bg-slate-50/60 transition">
+                          <td className="px-5 py-3">
+                            <span className="font-mono font-extrabold text-slate-900">{c.code}</span>
+                            {!c.is_active && <span className="ml-2 px-1.5 py-0.5 bg-slate-200 text-slate-500 rounded text-[9px] font-extrabold uppercase">off</span>}
+                          </td>
+                          <td className="px-4 py-3 font-bold text-slate-700">
+                            {c.discount_type === 'percent' ? `${c.discount_value}%` : `৳${c.discount_value.toLocaleString()}`}
+                          </td>
+                          <td className="px-4 py-3 text-[10px] text-slate-500 leading-relaxed">
+                            min ৳{c.min_order_amount.toLocaleString()}
+                            {c.max_discount != null && ` · cap ৳${c.max_discount.toLocaleString()}`}
+                            {c.usage_limit != null && ` · limit ${c.usage_limit}`}
+                            {c.expires_at && ` · exp ${new Date(c.expires_at).toLocaleDateString('en-GB')}`}
+                          </td>
+                          <td className="px-4 py-3 font-bold text-slate-700">{c.used_count}{c.usage_limit != null ? ` / ${c.usage_limit}` : ''}</td>
+                          <td className="px-5 py-3 text-right whitespace-nowrap">
+                            <button onClick={() =>
+                                api.apiUpdateCoupon(c.id, { is_active: !c.is_active })
+                                  .then(() => setCoupons((prev) => prev.map((x) => (x.id === c.id ? { ...x, is_active: !x.is_active } : x))))
+                                  .catch((err) => toast.error(err.message))
+                              }
+                              aria-label={`${c.is_active ? 'Disable' : 'Enable'} coupon ${c.code}`}
+                              className={`p-2 rounded-lg transition ${c.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}>
+                              <Power className="w-4 h-4" />
+                            </button>
+                            <button onClick={async () => {
+                                const ok = await confirmDialog({
+                                  title: `Delete coupon ${c.code}?`,
+                                  message: 'Customers will no longer be able to redeem it.',
+                                  confirmText: 'Delete Coupon',
+                                  danger: true
+                                });
+                                if (!ok) return;
+                                api.apiDeleteCoupon(c.id)
+                                  .then(() => { setCoupons((prev) => prev.filter((x) => x.id !== c.id)); toast.success('Coupon deleted.'); })
+                                  .catch((err) => toast.error(err.message));
+                              }}
+                              aria-label={`Delete coupon ${c.code}`}
+                              className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition ml-1">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* SECURITY LOG */}
+      {tab === 'security' && (
+        <div className="space-y-3">
+          {!isLiveMode ? (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800">
+              Audit logs are available in live Supabase mode.
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <div className="text-center py-14 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+              <ScrollText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-500">No admin actions logged yet</p>
+              <p className="text-[11px] text-slate-400 mt-1">Role changes and sensitive admin actions appear here automatically.</p>
+            </div>
+          ) : (
+            auditLogs.map((log) => (
+              <div key={log.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center gap-3 text-xs">
+                <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg font-mono font-extrabold text-[10px]">{log.action}</span>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-700">
+                    {log.target_type ?? '—'}
+                    {log.target_id && <span className="font-mono text-slate-400"> #{String(log.target_id).slice(0, 8)}</span>}
+                  </p>
+                  <p className="text-[10px] text-slate-400 truncate max-w-md">
+                    {Object.keys(log.details ?? {}).length > 0 ? JSON.stringify(log.details) : 'no details'}
+                  </p>
+                </div>
+                <div className="ml-auto text-right shrink-0">
+                  <p className="text-[10px] font-semibold text-slate-500">{new Date(log.created_at).toLocaleString('en-GB')}</p>
+                  {log.actor_id && <p className="text-[10px] font-mono text-slate-400">actor …{log.actor_id.slice(-6)}</p>}
                 </div>
               </div>
             ))

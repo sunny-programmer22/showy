@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, MapPin, CreditCard, Truck, ShieldCheck, Check, ChevronRight, UserPlus, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, Truck, ShieldCheck, Check, ChevronRight, UserPlus, Loader2, TicketPercent, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { PaymentGatewayModal } from '../components/PaymentGatewayModal';
 import { toast } from '../components/ui/Toast';
 import { VariantChip } from '../components/ui/VariantChip';
-import { Order, PaymentMethod, ShippingAddress } from '../types';
+import { Order, PaymentMethod, ShippingAddress, Coupon, couponDiscountFor } from '../types';
+import * as api from '../lib/api';
 
 interface CheckoutPageProps {
   onBack: () => void;
@@ -19,6 +20,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
   const [gatewayOpen, setGatewayOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
 
+  const [couponCode, setCouponCode] = useState('');
+  const [couponChecking, setCouponChecking] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const couponDiscount = appliedCoupon ? couponDiscountFor(appliedCoupon, cartTotal) : 0;
+
   const [form, setForm] = useState<ShippingAddress>({
     fullName: currentUser?.full_name || '',
     phone: currentUser?.phone || '',
@@ -30,7 +36,38 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
   });
 
   const shippingFee = shippingMethod === 'express' ? 150 : cartTotal > 5000 ? 0 : 80;
-  const grandTotal = cartTotal + shippingFee;
+  const grandTotal = Math.max(0, cartTotal - couponDiscount) + shippingFee;
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setCouponChecking(true);
+    try {
+      const coupon = await api.validateCouponByCode(code);
+      if (!coupon) {
+        toast.error(`Coupon "${code.toUpperCase()}" does not exist.`);
+        return;
+      }
+      if (!coupon.is_active || (coupon.expires_at && new Date(coupon.expires_at) < new Date())) {
+        toast.error('This coupon is no longer active.');
+        return;
+      }
+      if (coupon.usage_limit != null && coupon.used_count >= coupon.usage_limit) {
+        toast.error('This coupon has reached its usage limit.');
+        return;
+      }
+      if (cartTotal < coupon.min_order_amount) {
+        toast.error(`This coupon needs a minimum order of ৳${coupon.min_order_amount.toLocaleString()}.`);
+        return;
+      }
+      setAppliedCoupon(coupon);
+      toast.success(`Coupon ${coupon.code} applied!`);
+    } catch (e: any) {
+      toast.error(e.message || 'Could not validate the coupon.');
+    } finally {
+      setCouponChecking(false);
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -89,7 +126,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
     if (placing) return;
     setPlacing(true);
     try {
-      const order = await placeOrder(form, paymentMethod, trxId);
+      const discount =
+        appliedCoupon && couponDiscount > 0
+          ? { amount: couponDiscount, code: appliedCoupon.code }
+          : undefined;
+      const order = await placeOrder(form, paymentMethod, trxId, discount);
       onOrderPlaced(order);
     } catch (e: any) {
       toast.error(`Order failed: ${e.message}. Please try again.`);
@@ -281,10 +322,37 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
               <span>Delivery ({shippingMethod})</span>
               <span className={shippingFee === 0 ? 'text-emerald-600 font-bold' : ''}>{shippingFee === 0 ? 'FREE' : `৳${shippingFee}`}</span>
             </div>
+            {appliedCoupon && (
+              <div className="flex justify-between items-center text-emerald-600">
+                <span className="flex items-center gap-1.5 font-bold">
+                  <TicketPercent className="w-4 h-4" /> {appliedCoupon.code}
+                  <button onClick={() => { setAppliedCoupon(null); setCouponCode(''); }} aria-label={`Remove coupon ${appliedCoupon.code}`}
+                    className="text-slate-400 hover:text-rose-500 transition"><X className="w-3.5 h-3.5" /></button>
+                </span>
+                <span className="font-bold">−৳{couponDiscount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between font-extrabold text-base text-slate-900 pt-2 border-t border-slate-200">
               <span>Total Payable</span><span>৳{grandTotal.toLocaleString()}</span>
             </div>
           </div>
+
+          {!appliedCoupon && (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <TicketPercent className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input type="text" value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())}
+                  placeholder="Coupon code" aria-label="Coupon code"
+                  className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <button type="button" onClick={handleApplyCoupon} disabled={couponChecking || !couponCode.trim()}
+                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shrink-0">
+                {couponChecking ? '…' : 'Apply'}
+              </button>
+            </div>
+          )}
 
           <div className="flex items-start gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl">
             <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />

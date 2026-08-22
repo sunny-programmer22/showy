@@ -10,7 +10,8 @@ import {
   OrderItem,
   PaymentMethod,
   ShippingAddress,
-  PayoutRequest
+  PayoutRequest,
+  Coupon
 } from '../types';
 
 const requireClient = () => {
@@ -244,7 +245,8 @@ export const apiPlaceOrder = async (
   cart: CartItem[],
   shops: Shop[],
   paymentMethod: PaymentMethod,
-  transactionId?: string
+  transactionId?: string,
+  discount?: { amount: number; code: string }
 ): Promise<Order> => {
   const sb = requireClient();
 
@@ -284,10 +286,15 @@ export const apiPlaceOrder = async (
       customer_email: customerEmail,
       customer_phone: customerPhone,
       shipping_address: shipping,
-      total_amount: cart.reduce(
-        (t, c) => t + (c.variant?.price ?? c.product.discount_price ?? c.product.price) * c.quantity,
-        0
+      total_amount: Math.max(
+        0,
+        cart.reduce(
+          (t, c) => t + (c.variant?.price ?? c.product.discount_price ?? c.product.price) * c.quantity,
+          0
+        ) - (discount?.amount ?? 0)
       ),
+      discount_amount: discount?.amount ?? 0,
+      coupon_code: discount?.code.toUpperCase() ?? null,
       platform_fee_total: platformFeeTotal,
       payment_method: paymentMethod,
       payment_status: paymentMethod === 'cod' ? 'pending' : 'paid',
@@ -333,6 +340,96 @@ export const apiUpdateItemStatus = async (
   // Recalculate parent order's overall_status (RPC may not exist yet — ignore errors)
   const rpcErr = (await sb.rpc('sync_order_overall_status', { p_order_id: orderId })).error;
   if (rpcErr) console.warn('sync_order_overall_status RPC missing:', rpcErr.message);
+};
+
+/* ------------------------- Wallets & Payouts ---------------------------- */
+
+const mapCoupon = (c: any): Coupon => ({
+  ...c,
+  code: String(c.code ?? '').toUpperCase(),
+  discount_value: n(c.discount_value),
+  min_order_amount: n(c.min_order_amount),
+  max_discount: c.max_discount == null ? null : n(c.max_discount),
+  usage_limit: c.usage_limit == null ? null : n(c.usage_limit),
+  used_count: n(c.used_count)
+});
+
+export const fetchCoupons = async (): Promise<Coupon[]> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('coupons')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as any[]).map(mapCoupon);
+};
+
+export const validateCouponByCode = async (code: string): Promise<Coupon | null> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('coupons')
+    .select('*')
+    .eq('code', code.trim().toUpperCase())
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapCoupon(data) : null;
+};
+
+export interface CouponInput {
+  code: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  min_order_amount?: number;
+  max_discount?: number | null;
+  usage_limit?: number | null;
+  is_active?: boolean;
+  expires_at?: string | null;
+}
+
+export const apiInsertCoupon = async (payload: CouponInput): Promise<Coupon> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('coupons')
+    .insert({ ...payload, code: payload.code.trim().toUpperCase() })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return mapCoupon(data);
+};
+
+export const apiUpdateCoupon = async (id: string, patch: Partial<CouponInput>) => {
+  const sb = requireClient();
+  const { error } = await sb.from('coupons').update(patch).eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+export const apiDeleteCoupon = async (id: string) => {
+  const sb = requireClient();
+  const { error } = await sb.from('coupons').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+/* --------------------------- Admin audit log ---------------------------- */
+
+export interface AuditLogEntry {
+  id: number;
+  actor_id: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  details: Record<string, any>;
+  created_at: string;
+}
+
+export const fetchAuditLogs = async (): Promise<AuditLogEntry[]> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('admin_audit_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as AuditLogEntry[];
 };
 
 /* ------------------------- Wallets & Payouts ---------------------------- */
