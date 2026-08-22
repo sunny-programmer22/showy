@@ -48,6 +48,22 @@ const VendorDashboard = lazy(() =>
 const AdminPanel = lazy(() =>
   import('./pages/AdminPanel').then((m) => ({ default: m.AdminPanel }))
 );
+/* Trust Pack — five static pages share ONE lazy chunk */
+const AboutPage = lazy(() =>
+  import('./pages/StaticPages').then((m) => ({ default: m.AboutPage }))
+);
+const ContactPage = lazy(() =>
+  import('./pages/StaticPages').then((m) => ({ default: m.ContactPage }))
+);
+const FaqPage = lazy(() =>
+  import('./pages/StaticPages').then((m) => ({ default: m.FaqPage }))
+);
+const PrivacyPage = lazy(() =>
+  import('./pages/StaticPages').then((m) => ({ default: m.PrivacyPage }))
+);
+const TermsPage = lazy(() =>
+  import('./pages/StaticPages').then((m) => ({ default: m.TermsPage }))
+);
 
 /** Route-level Suspense fallback */
 const PageLoader: React.FC = () => (
@@ -62,7 +78,8 @@ const PageLoader: React.FC = () => (
 const KNOWN_PAGES = [
   'home', 'products', 'product-detail', 'shops', 'shop-detail', 'create-shop',
   'upload-product', 'checkout', 'order-confirmation', 'orders',
-  'vendor-dashboard', 'admin-panel'
+  'vendor-dashboard', 'admin-panel',
+  'about', 'contact', 'faq', 'privacy', 'terms'
 ];
 
 interface RouteState {
@@ -243,6 +260,21 @@ const Router: React.FC = () => {
 
       case 'admin-panel':
         return <AdminPanel onNavigate={navigate} />;
+
+      case 'about':
+        return <AboutPage onBack={() => window.history.length > 1 ? window.history.back() : navigate('home')} onNavigate={navigate} />;
+
+      case 'contact':
+        return <ContactPage onBack={() => window.history.length > 1 ? window.history.back() : navigate('home')} />;
+
+      case 'faq':
+        return <FaqPage onBack={() => window.history.length > 1 ? window.history.back() : navigate('home')} />;
+
+      case 'privacy':
+        return <PrivacyPage onBack={() => window.history.length > 1 ? window.history.back() : navigate('home')} />;
+
+      case 'terms':
+        return <TermsPage onBack={() => window.history.length > 1 ? window.history.back() : navigate('home')} />;
 
       default:
         return <HomePage

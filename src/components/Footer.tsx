@@ -57,7 +57,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         {/* Footer Navigation Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 py-12">
           <div className="space-y-4">
             <button onClick={go('home')} className="flex items-center space-x-2 group w-fit">
               <div className="p-2 bg-gradient-to-br from-brand-500 to-brand-700 text-white rounded-lg shadow-lg shadow-brand-900/40 group-hover:scale-105 transition-transform">
@@ -102,6 +102,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           <div>
+            <h4 className="font-bold text-white text-sm mb-4">Support</h4>
+            <ul className="space-y-2.5 text-xs">
+              <NavLink label="About Showy" page="about" />
+              <NavLink label="Contact Us" page="contact" />
+              <NavLink label="FAQ" page="faq" />
+            </ul>
+          </div>
+
+          <div>
             <h4 className="font-bold text-white text-sm mb-4">About the Platform</h4>
             <p className="text-xs text-slate-500 leading-relaxed mb-3">
               A trusted multi-vendor marketplace connecting verified merchants with buyers across Bangladesh.
@@ -115,10 +124,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
           <p>© 2026 Showy — Complete Multi-Vendor E-Commerce Platform.</p>
-          <p className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            All systems operational
-          </p>
+          <div className="flex items-center gap-4">
+            <button onClick={go('privacy')} className="hover:text-brand-400 transition-colors">Privacy Policy</button>
+            <span aria-hidden="true" className="text-slate-700">·</span>
+            <button onClick={go('terms')} className="hover:text-brand-400 transition-colors">Terms &amp; Conditions</button>
+            <span aria-hidden="true" className="text-slate-700">·</span>
+            <p className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              All systems operational
+            </p>
+          </div>
         </div>
       </div>
     </footer>
