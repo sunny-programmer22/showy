@@ -1,0 +1,34 @@
+-- ============================================================================
+-- SHOPTASTIC.BD — PATCH: Order Status Sync RPC
+-- Run this ONCE in Supabase SQL Editor (after the main schema).
+-- Lets vendors advance their line-item status AND automatically recalculates
+-- the parent order's overall_status (delivered only when ALL items delivered).
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.sync_order_overall_status(p_order_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_worst TEXT;
+BEGIN
+  SELECT CASE
+           WHEN BOOL_AND(i.status = 'delivered') THEN 'delivered'
+           WHEN BOOL_OR(i.status = 'shipped')    THEN 'shipped'
+           WHEN BOOL_OR(i.status IN ('processing','pending')) THEN 'processing'
+           ELSE 'pending'
+         END
+  INTO v_worst
+  FROM public.order_items i
+  WHERE i.order_id = p_order_id;
+
+  UPDATE public.orders
+  SET overall_status = COALESCE(v_worst, 'pending')
+  WHERE id = p_order_id;
+END;
+$$;
+
+-- Any logged-in user may call it; SECURITY DEFINER + RLS keep it safe.
+GRANT EXECUTE ON FUNCTION public.sync_order_overall_status(UUID) TO authenticated;

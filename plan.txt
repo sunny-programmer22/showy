@@ -1,0 +1,240 @@
+================================================================================
+          MULTI-VENDOR E-COMMERCE PLATFORM - SYSTEM ARCHITECTURE & PLAN
+================================================================================
+Hosting Target: GitHub Pages (Client-side Single Page Application)
+Backend / BaaS: Supabase (PostgreSQL, Auth, Storage, Realtime, Row Level Security)
+Frontend Tech: React 18 / TypeScript, Vite, Tailwind CSS, Lucide Icons, Canvas-Confetti
+
+--------------------------------------------------------------------------------
+1. ARCHITECTURE OVERVIEW (SERVERLESS / SUPABASE ON GITHUB PAGES)
+--------------------------------------------------------------------------------
+Since GitHub Pages hosts static web assets without a custom Node.js server runtime:
+- The entire application runs as a responsive, high-performance SPA using React & TypeScript.
+- Data persistence, relational querying, and file storage are powered directly by Supabase:
+  * Supabase Auth: User sign-up, email/phone login, JWT session management.
+  * Supabase PostgreSQL Database: Relational schema with Row Level Security (RLS).
+  * Supabase Storage: Product images, shop logos, and vendor banners.
+  * Realtime Subscriptions: Instant order status updates and notifications.
+- Client-side Hybrid Store: Seamlessly works with Supabase credentials or switches to a local persistence store for immediate offline/local demonstration with rich initial seed data.
+
+--------------------------------------------------------------------------------
+2. USER ROLES & ACCESS CONTROL
+--------------------------------------------------------------------------------
+1. Super Admin (Platform Owner):
+   - Oversees the entire multi-vendor marketplace.
+   - Collects 5% automated platform commission from all 3rd-party vendor sales.
+   - Manages and creates the official Platform Flagship Store (exempt from commission cut).
+   - Super Admin Panel: Platform GMV, total commission wallet, vendor approval, shop status toggles, user management, and payout disbursement approvals.
+
+2. Vendor / Shop Owner:
+   - Any registered user can launch their own custom shop via the "Open a Shop" wizard.
+   - Dedicated Vendor Management Dashboard:
+     * Product inventory management (Add, Edit, Delete, Stock track).
+     * Order fulfillment pipeline (Mark as Processing, Shipped, Delivered).
+     * Financial Ledger: Gross revenue, 5% admin fee deducted, 95% net earnings wallet.
+     * Payout withdrawal requests (to bKash, Nagad, Bank).
+     * Shop profile customization (logo, banner, description, contact details).
+
+3. Customer:
+   - Browse all products across different shops or visit dedicated shop storefronts.
+   - Global Search and Multi-Faceted filtering (category, price slider, shop, rating, in-stock).
+   - Multi-vendor unified shopping cart and multi-step checkout.
+   - Automated bKash & Nagad OTP payment simulation & Gateway connection.
+   - Interactive Live Order Tracking timeline and downloadable PDF/Printable Invoices.
+   - Product reviews and ratings with verified purchase tags.
+
+--------------------------------------------------------------------------------
+3. CORE MODULES & WORKFLOW SPECIFICATION
+--------------------------------------------------------------------------------
+
+[MODULE 1: SHOP & VENDOR MANAGEMENT]
+- Public Storefronts (`#/shop/:shopId` or `/shop/:slug`):
+  * Shop header with banner, logo, verified badge, rating score, and bio.
+  * Shop-specific product catalog with dedicated search and filter.
+- Shop Creation Wizard:
+  * Shop Name, Slug, Logo URL/Upload, Banner, Category focus, Phone/Email.
+  * Automatic assignment of owner ID to the logged-in user.
+- Admin First Shop:
+  * The platform creator's flagship store is seeded or can be initialized by admin.
+  * Flagship products are marked with 0% platform fee (100% earnings retained).
+
+[MODULE 2: PRODUCT CATALOG, SEARCH & MULTI-FACET FILTERING]
+- Advanced Search Engine:
+  * Live instant search bar with autocomplete suggestions for products and shops.
+- Dynamic Filter Sidebar:
+  * Category and Sub-category hierarchy.
+  * Dynamic Dual-handle Price Range slider.
+  * Filter by Specific Shop / Vendor.
+  * Filter by Customer Rating (4+ stars, 3+ stars).
+  * Filter by Stock Availability and Discounted deals.
+  * Sorting options (Popularity, Price Low to High, Price High to Low, Newest, Top Rated).
+- Product Details Page:
+  * Multi-image interactive gallery with zoom.
+  * Variant selectors (Size, Color, Edition).
+  * Stock counter and badge (e.g., "Only 3 left!").
+  * Shop info card with link to vendor storefront.
+  * Related products from the same shop and category.
+  * Customer reviews and star breakdown.
+
+[MODULE 3: PRODUCT UPLOAD & MANAGEMENT PAGE]
+- Accessible directly from Vendor Dashboard or dedicated "/upload-product" route:
+  * Basic Info: Title, Slug, Category, Description (markdown / rich text).
+  * Pricing: Regular Price, Discounted Sale Price, SKU.
+  * Media: Image uploader with file drop zone and preview thumbnails.
+  * Variants: Add custom sizes, colors, and specific variant inventory.
+  * Inventory: Stock quantity, Low stock warning threshold.
+  * Shop association: Automatically links to active vendor shop.
+
+[MODULE 4: MULTI-VENDOR CART & CHECKOUT]
+- Smart Cart:
+  * Items clearly grouped by Shop.
+  * Quantity increment/decrement with real-time stock limits.
+  * Subtotal, estimated shipping, and voucher/coupon application.
+- Multi-Step Checkout:
+  * Step 1: Customer & Delivery Information (Name, Phone, Address, City, Postal Code).
+  * Step 2: Shipping Method Selection (Standard, Express).
+  * Step 3: Payment Method Selection (bKash, Nagad, Card, Cash on Delivery).
+  * Step 4: Review & Final Payment Execution.
+
+[MODULE 5: AUTOMATED BKASH & NAGAD PAYMENT WITH OTP]
+- Interactive PGW (Payment Gateway) Simulation & Live Integration Engine:
+  * When bKash / Nagad is selected, opens the secure branded gateway interface.
+  * Step A: User confirms mobile wallet number (e.g., 017xxxxxxxx).
+  * Step B: Gateway sends automated 6-digit OTP code to the screen / SMS simulator.
+  * Step C: User enters the 6-digit verification code.
+  * Step D: User inputs wallet PIN to authenticate transaction securely.
+  * Step E: Instant verification callback returns unique Transaction ID (TrxID) and marks order as `PAID`.
+
+[MODULE 6: 5% AUTOMATED PLATFORM PROFIT / COMMISSION SPLIT]
+- Real-time Ledger Allocation:
+  * On every successfully paid order item:
+    - If Shop == Admin Store:
+        Platform Admin Profit = 100% of item revenue
+        Vendor Balance = N/A
+    - If Shop != Admin Store (3rd-party Vendor):
+        Platform Admin Profit = 5% of item gross amount
+        Vendor Net Balance = 95% of item gross amount
+- Transparent Accounting:
+  * Admin sees total platform revenue broken down into Gross Volume vs 5% Net Cut.
+  * Vendor dashboard displays exact breakdown per order (Total Sale, -5% Platform Fee, Net Receivable).
+  * Vendor payout ledger allows vendors to withdraw accumulated 95% funds to their bKash/Nagad/Bank account with status tracking (Pending -> Approved -> Transferred).
+
+[MODULE 7: ORDER MANAGEMENT, TRACKING & INVOICING]
+- Order Status Lifecycle:
+  [PENDING] -> [PAID / PROCESSING] -> [SHIPPED] -> [DELIVERED] -> [COMPLETED]
+- Customer Order Tracking:
+  * Interactive tracking timeline with timestamps and step-by-step progress.
+  * Delivery updates and courier tracking info.
+- Order Confirmation & Invoice:
+  * Instant celebratory confirmation page with confetti.
+  * Printable & downloadable digital invoice with Order ID, customer info, itemized table, shop breakdown, payment method, and TrxID.
+
+[MODULE 8: DUAL CONTROL PANELS (ADMIN & VENDOR)]
+1. Super Admin Panel:
+   - System KPIs: Gross Marketplace Volume (GMV), 5% Admin Profit Collected, Total Orders, Active Vendors.
+   - Vendor Management: List all registered stores, approve/reject shops, toggle active status.
+   - Global Orders: Monitor all customer transactions and status across all shops.
+   - Commission & Payouts: View vendor balance withdrawals and approve payouts.
+   - Flagship Shop Management: Add and edit products directly for the platform's own store.
+
+2. Vendor Dashboard:
+   - Performance Metrics: Total Sales, 95% Net Earnings, Active Products, Pending Orders.
+   - Product Catalog: Add, edit, manage stock, toggle visibility.
+   - Order Processing: Update order delivery stage (Packed, Shipped, Delivered).
+   - Wallet & Payouts: Request cashout to bKash/Nagad, view payout history.
+   - Shop Settings: Update store branding, contact info, and policies.
+
+--------------------------------------------------------------------------------
+4. DATABASE SCHEMA (SUPABASE POSTGRESQL TABLES)
+--------------------------------------------------------------------------------
+1. `profiles`:
+   - id (uuid, references auth.users)
+   - email (text), full_name (text), phone (text), avatar_url (text)
+   - role (text: 'customer' | 'vendor' | 'admin')
+   - created_at (timestamptz)
+
+2. `shops`:
+   - id (uuid, primary key)
+   - owner_id (uuid, references profiles.id)
+   - name (text), slug (text, unique), description (text)
+   - logo_url (text), banner_url (text)
+   - is_admin_shop (boolean, default false)
+   - is_verified (boolean, default false)
+   - is_active (boolean, default true)
+   - rating (numeric, default 5.0)
+   - bkash_payout_number (text), nagad_payout_number (text), bank_info (jsonb)
+   - created_at (timestamptz)
+
+3. `products`:
+   - id (uuid, primary key)
+   - shop_id (uuid, references shops.id)
+   - title (text), slug (text), description (text)
+   - category (text), subcategory (text), tags (text[])
+   - price (numeric), discount_price (numeric)
+   - stock (integer, default 0)
+   - images (text[])
+   - rating (numeric, default 5.0), reviews_count (integer, default 0)
+   - is_featured (boolean, default false)
+   - is_active (boolean, default true)
+   - created_at (timestamptz)
+
+4. `orders`:
+   - id (uuid, primary key)
+   - order_number (text, unique)
+   - customer_id (uuid, references profiles.id)
+   - customer_name (text), customer_email (text), customer_phone (text)
+   - shipping_address (jsonb: address, city, postal_code, note)
+   - total_amount (numeric)
+   - platform_fee_total (numeric) -- aggregate 5% cut from vendor items
+   - payment_method (text: 'bkash' | 'nagad' | 'card' | 'cod')
+   - payment_status (text: 'pending' | 'paid' | 'failed')
+   - transaction_id (text)
+   - overall_status (text: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled')
+   - created_at (timestamptz)
+
+5. `order_items`:
+   - id (uuid, primary key)
+   - order_id (uuid, references orders.id)
+   - shop_id (uuid, references shops.id)
+   - product_id (uuid, references products.id)
+   - product_title (text), product_image (text)
+   - unit_price (numeric), quantity (integer), total_price (numeric)
+   - is_admin_shop (boolean)
+   - admin_commission_5pct (numeric) -- calculated 5% profit for admin
+   - vendor_amount_95pct (numeric)   -- calculated 95% net for vendor
+   - status (text: 'pending' | 'processing' | 'shipped' | 'delivered')
+
+6. `vendor_wallets`:
+   - id (uuid, primary key)
+   - shop_id (uuid, references shops.id, unique)
+   - total_earnings_95pct (numeric, default 0)
+   - current_balance (numeric, default 0)
+   - total_withdrawn (numeric, default 0)
+   - updated_at (timestamptz)
+
+7. `payout_requests`:
+   - id (uuid, primary key)
+   - shop_id (uuid, references shops.id)
+   - amount (numeric)
+   - payment_method (text: 'bkash' | 'nagad' | 'bank')
+   - account_number (text)
+   - status (text: 'pending' | 'approved' | 'rejected' | 'transferred')
+   - notes (text)
+   - created_at (timestamptz)
+
+8. `reviews`:
+   - id (uuid, primary key)
+   - product_id (uuid, references products.id)
+   - user_id (uuid, references profiles.id)
+   - user_name (text), rating (integer), comment (text)
+   - created_at (timestamptz)
+
+--------------------------------------------------------------------------------
+5. GITHUB PAGES STATIC DEPLOYMENT CONFIGURATION
+--------------------------------------------------------------------------------
+- Built with Vite for ultra-fast bundling and asset optimization.
+- Base path configured for custom domain or GitHub Pages repo path (`./`).
+- Hash-based or 404.html-fallback client routing for seamless page navigation on static hosts.
+- Direct Supabase Client connection via environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
+- Built-in live demo mode with toggleable Supabase backend connection modal so users can test immediately or connect their own Supabase project in 1-click.
+================================================================================

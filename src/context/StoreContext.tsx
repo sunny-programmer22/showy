@@ -1,0 +1,618 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Product, Shop, UserProfile, CartItem, Order, PayoutRequest, VendorWallet, OrderItem, PaymentMethod } from '../types';
+import { INITIAL_USERS, INITIAL_SHOPS, INITIAL_PRODUCTS, INITIAL_ORDERS } from '../data/mockData';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import * as api from '../lib/api';
+
+interface StoreContextType {
+  // Loading / mode
+  isLoading: boolean;
+  isLiveMode: boolean;
+
+  // Auth & Roles
+  users: UserProfile[];
+  currentUser: UserProfile | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<'ok' | 'confirm-email'>;
+  logout: () => Promise<void>;
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+
+  // Products
+  products: Product[];
+  addProduct: (product: Omit<Product, 'id' | 'created_at' | 'rating' | 'reviews_count'>) => Promise<Product>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+
+  // Shops
+  shops: Shop[];
+  createShop: (shopData: Omit<Shop, 'id' | 'created_at' | 'rating' | 'reviews_count'>) => Promise<Shop>;
+  updateShop: (id: string, shopData: Partial<Shop>) => Promise<void>;
+  toggleShopActive: (id: string) => Promise<void>;
+
+  // Cart (always local)
+  cart: CartItem[];
+  addToCart: (product: Product, quantity?: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
+  cartTotal: number;
+  cartCount: number;
+
+  // Orders
+  orders: Order[];
+  placeOrder: (shipping: any, paymentMethod: PaymentMethod, transactionId?: string) => Promise<Order>;
+  updateOrderStatus: (orderId: string, itemId: string, status: OrderItem['status']) => Promise<void>;
+
+  // Financials & Commission (5% split engine)
+  vendorWallets: VendorWallet[];
+  payoutRequests: PayoutRequest[];
+  requestPayout: (shopId: string, shopName: string, amount: number, method: 'bkash' | 'nagad' | 'bank', accountNum: string) => Promise<void>;
+  approvePayout: (requestId: string) => Promise<void>;
+  rejectPayout: (requestId: string) => Promise<void>;
+  platformAdminEarnings: number;
+
+  // Search & Filter state
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  selectedCategory: string;
+  setSelectedCategory: (cat: string) => void;
+  selectedShopId: string;
+  setSelectedShopId: (shopId: string) => void;
+  priceRange: [number, number];
+  setPriceRange: (range: [number, number]) => void;
+}
+
+const StoreContext = createContext<StoreContextType | undefined>(undefined);
+
+const STORAGE_KEYS = {
+  SHOPS: 'shoptastic_shops',
+  PRODUCTS: 'shoptastic_products',
+  ORDERS: 'shoptastic_orders',
+  PAYOUTS: 'shoptastic_payouts',
+  CART: 'shoptastic_cart',
+};
+
+const readLS = <T,>(key: string, fallback: T): T => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const LIVE = isSupabaseConfigured() && supabase !== null;
+
+  /* ------------------------------ STATE ------------------------------ */
+  const [isLoading, setIsLoading] = useState(LIVE);
+  const [users, setUsers] = useState<UserProfile[]>(INITIAL_USERS);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const [shops, setShops] = useState<Shop[]>(() =>
+    LIVE ? [] : readLS(STORAGE_KEYS.SHOPS, INITIAL_SHOPS)
+  );
+  const [products, setProducts] = useState<Product[]>(() =>
+    LIVE ? [] : readLS(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS)
+  );
+  const [orders, setOrders] = useState<Order[]>(() =>
+    LIVE ? [] : readLS(STORAGE_KEYS.ORDERS, INITIAL_ORDERS)
+  );
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>(() =>
+    LIVE ? [] : readLS(STORAGE_KEYS.PAYOUTS, [
+      {
+        id: 'payout_101',
+        shop_id: 'shop_gadget_hub',
+        shop_name: 'GadgetHub Bangladesh',
+        amount: 3000,
+        payment_method: 'bkash',
+        account_number: '01811112222',
+        status: 'pending',
+        notes: 'Monthly sales payout',
+        created_at: new Date(Date.now() - 86400000 * 2).toISOString()
+      }
+    ])
+  );
+
+  const [cart, setCart] = useState<CartItem[]>(() => readLS(STORAGE_KEYS.CART, []));
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedShopId, setSelectedShopId] = useState('all');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+
+  /* ------------------------- PERSISTENCE (demo) ---------------------- */
+  useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(shops)); }, [shops, LIVE]);
+  useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products)); }, [products, LIVE]);
+  useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders)); }, [orders, LIVE]);
+  useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify(payoutRequests)); }, [payoutRequests, LIVE]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart)); }, [cart]);
+
+  /* --------------------------- DATA LOADERS -------------------------- */
+
+  const loadPublicData = useCallback(async () => {
+    if (!LIVE) return;
+    try {
+      const [s, p] = await Promise.all([api.fetchShops(), api.fetchProducts()]);
+      setShops(s);
+      setProducts(p);
+    } catch (e: any) {
+      console.error('Failed to load public data:', e.message);
+    }
+  }, [LIVE]);
+
+  const loadUserData = useCallback(async (userId: string | null) => {
+    if (!LIVE || !userId) {
+      setCurrentUser(null);
+      setOrders([]);
+      setPayoutRequests([]);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const profile = await api.fetchProfile(userId);
+      setCurrentUser(profile);
+      const [o, pay] = await Promise.all([api.fetchOrders(shops), api.fetchPayouts()]);
+      setOrders(o);
+      setPayoutRequests(
+        (pay as any[]).map((r) => ({
+          ...r,
+          shop_name: shops.find((s) => s.id === r.shop_id)?.name ?? 'Vendor',
+          amount: Number(r.amount)
+        }))
+      );
+      if (profile?.role === 'admin') {
+        setUsers(await api.fetchProfiles());
+      }
+    } catch (e: any) {
+      console.error('Failed to load user data:', e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [LIVE, shops]);
+
+  // Initial load + auth listener
+  useEffect(() => {
+    if (!LIVE) return;
+    loadPublicData().then(async () => {
+      const user = await api.getSessionUser();
+      await loadUserData(user?.id ?? null);
+      setIsLoading(false);
+    });
+    const unsub = api.onAuthChange((userId) => {
+      loadUserData(userId);
+    });
+    return unsub;
+  }, [LIVE]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ------------------------------- AUTH ------------------------------ */
+
+  const signIn = async (email: string, password: string) => {
+    await api.authSignIn(email, password); // onAuthChange handles the rest
+  };
+
+  const signUp = async (email: string, password: string, fullName: string): Promise<'ok' | 'confirm-email'> => {
+    const data = await api.authSignUp(email, password, fullName);
+    if (!data.session) return 'confirm-email'; // user must confirm via inbox
+    return 'ok';
+  };
+
+  const logout = async () => {
+    if (LIVE) await api.authSignOut();
+    setCurrentUser(null);
+    setOrders([]);
+    setPayoutRequests([]);
+  };
+
+  /* ----------------------------- PRODUCTS ---------------------------- */
+
+  const addProduct = async (
+    productData: Omit<Product, 'id' | 'created_at' | 'rating' | 'reviews_count'>
+  ): Promise<Product> => {
+    if (LIVE) {
+      const created = await api.apiInsertProduct(productData);
+      setProducts((prev) => [created, ...prev]);
+      return created;
+    }
+    const newProduct: Product = {
+      ...productData,
+      id: `prod_${Date.now()}`,
+      created_at: new Date().toISOString(),
+      rating: 5.0,
+      reviews_count: 0
+    };
+    setProducts((prev) => [newProduct, ...prev]);
+    return newProduct;
+  };
+
+  const updateProduct = async (id: string, patch: Partial<Product>) => {
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    if (LIVE) await api.apiUpdateProduct(id, patch);
+  };
+
+  const deleteProduct = async (id: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    if (LIVE) await api.apiDeleteProduct(id);
+  };
+
+  /* ------------------------------ SHOPS ------------------------------ */
+
+  const createShop = async (
+    shopData: Omit<Shop, 'id' | 'created_at' | 'rating' | 'reviews_count'>
+  ): Promise<Shop> => {
+    if (LIVE) {
+      const created = await api.apiCreateShop(shopData);
+      setShops((prev) => [created, ...prev]);
+      if (currentUser && currentUser.role === 'customer') {
+        setCurrentUser({ ...currentUser, role: 'vendor' });
+      }
+      return created;
+    }
+    const newShop: Shop = {
+      ...shopData,
+      id: `shop_${Date.now()}`,
+      created_at: new Date().toISOString(),
+      rating: 5.0,
+      reviews_count: 0,
+      is_active: true,
+      is_verified: true
+    };
+    setShops((prev) => [newShop, ...prev]);
+    if (currentUser && currentUser.role === 'customer') {
+      setCurrentUser({ ...currentUser, role: 'vendor' });
+    }
+    return newShop;
+  };
+
+  const updateShop = async (id: string, patch: Partial<Shop>) => {
+    setShops((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+    if (LIVE) await api.apiUpdateShop(id, patch);
+  };
+
+  const toggleShopActive = async (id: string) => {
+    const target = shops.find((s) => s.id === id);
+    if (!target) return;
+    setShops((prev) => prev.map((s) => (s.id === id ? { ...s, is_active: !s.is_active } : s)));
+    if (LIVE) await api.apiUpdateShop(id, { is_active: !target.is_active });
+  };
+
+  /* ------------------------------- CART ------------------------------ */
+
+  const addToCart = (product: Product, quantity = 1) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+        );
+      }
+      return [...prev, { product, quantity }];
+    });
+  };
+
+  const removeFromCart = (productId: string) =>
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) return removeFromCart(productId);
+    setCart((prev) =>
+      prev.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
+    );
+  };
+
+  const clearCart = () => setCart([]);
+
+  const cartTotal = cart.reduce(
+    (total, item) => total + (item.product.discount_price ?? item.product.price) * item.quantity,
+    0
+  );
+  const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
+
+  /* ------------------------------ ORDERS ----------------------------- */
+
+  const placeOrder = async (
+    shipping: any,
+    paymentMethod: PaymentMethod,
+    transactionId?: string
+  ): Promise<Order> => {
+    if (!currentUser) throw new Error('Please sign in to place an order.');
+
+    if (LIVE) {
+      const order = await api.apiPlaceOrder(
+        currentUser.id,
+        shipping.fullName,
+        shipping.email,
+        shipping.phone,
+        shipping,
+        cart,
+        shops,
+        paymentMethod,
+        transactionId
+      );
+      setOrders((prev) => [order, ...prev]);
+
+      // Deduct stock locally for instant UI feedback
+      cart.forEach((line) => {
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === line.product.id ? { ...p, stock: Math.max(0, p.stock - line.quantity) } : p
+          )
+        );
+      });
+
+      clearCart();
+
+      // Refresh wallets so vendor dashboards show the credit instantly
+      if (paymentMethod !== 'cod') {
+        api.fetchWallets().catch(() => {});
+      }
+      return order;
+    }
+
+    /* -------- DEMO MODE (original local logic) -------- */
+    let platformFeeTotal = 0;
+    const orderItems: OrderItem[] = cart.map((cartItem, idx) => {
+      const itemShop = shops.find((s) => s.id === cartItem.product.shop_id);
+      const isAdminShop = itemShop?.is_admin_shop ?? false;
+      const unitPrice = cartItem.product.discount_price ?? cartItem.product.price;
+      const totalPrice = unitPrice * cartItem.quantity;
+      const adminCommission = isAdminShop ? totalPrice : totalPrice * 0.05;
+      const vendorAmount = isAdminShop ? 0 : totalPrice * 0.95;
+      if (!isAdminShop) platformFeeTotal += adminCommission;
+
+      return {
+        id: `item_${Date.now()}_${idx}`,
+        order_id: '',
+        shop_id: cartItem.product.shop_id,
+        product_id: cartItem.product.id,
+        product_title: cartItem.product.title,
+        product_image: cartItem.product.images[0] || '',
+        unit_price: unitPrice,
+        quantity: cartItem.quantity,
+        total_price: totalPrice,
+        is_admin_shop: isAdminShop,
+        admin_commission_5pct: adminCommission,
+        vendor_amount_95pct: vendorAmount,
+        status: 'processing',
+        shop_name: itemShop?.name || 'Unknown Vendor'
+      };
+    });
+
+    const newOrder: Order = {
+      id: `ord_${Date.now()}`,
+      order_number: `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      customer_id: currentUser.id,
+      customer_name: shipping.fullName,
+      customer_email: shipping.email,
+      customer_phone: shipping.phone,
+      shipping_address: shipping,
+      total_amount: cartTotal,
+      platform_fee_total: platformFeeTotal,
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === 'cod' ? 'pending' : 'paid',
+      transaction_id: transactionId || `TXN${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      overall_status: 'processing',
+      created_at: new Date().toISOString(),
+      items: orderItems.map((i) => ({ ...i, order_id: `ord_${Date.now()}` }))
+    };
+
+    cart.forEach((line) => {
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === line.product.id ? { ...p, stock: Math.max(0, p.stock - line.quantity) } : p
+        )
+      );
+    });
+
+    setOrders((prev) => [newOrder, ...prev]);
+    clearCart();
+    return newOrder;
+  };
+
+  const updateOrderStatus = async (orderId: string, itemId: string, status: OrderItem['status']) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((ord) =>
+        ord.id !== orderId
+          ? ord
+          : {
+              ...ord,
+              items: ord.items.map((i) => (i.id === itemId ? { ...i, status } : i)),
+              overall_status: status
+            }
+      )
+    );
+    if (LIVE) await api.apiUpdateItemStatus(itemId, status, orderId);
+  };
+
+  /* -------------------- FINANCIALS (wallets & admin) ------------------ */
+
+  const [dbWallets, setDbWallets] = useState<any[]>([]);
+  useEffect(() => {
+    if (LIVE && currentUser) {
+      api.fetchWallets().then(setDbWallets).catch(() => {});
+    } else {
+      setDbWallets([]);
+    }
+  }, [LIVE, currentUser, orders]);
+
+  const vendorWallets: VendorWallet[] = shops
+    .filter((s) => !s.is_admin_shop)
+    .map((shop) => {
+      const pendingWithdrawals = payoutRequests
+        .filter((pr) => pr.shop_id === shop.id && pr.status === 'pending')
+        .reduce((sum, pr) => sum + Number(pr.amount), 0);
+
+      if (LIVE) {
+        const w = dbWallets.find((x) => x.shop_id === shop.id);
+        return {
+          shop_id: shop.id,
+          shop_name: shop.name,
+          total_earnings_95pct: Number(w?.total_earnings_95pct ?? 0),
+          current_balance: Number(w?.current_balance ?? 0),
+          total_withdrawn: Number(w?.total_withdrawn ?? 0),
+          pending_clearance: pendingWithdrawals
+        };
+      }
+
+      // Demo-mode computation from local orders
+      let totalEarnings95 = 0;
+      orders.forEach((ord) => {
+        if (ord.payment_status === 'paid') {
+          ord.items.forEach((item) => {
+            if (item.shop_id === shop.id) totalEarnings95 += item.vendor_amount_95pct;
+          });
+        }
+      });
+      const totalWithdrawn = payoutRequests
+        .filter((pr) => pr.shop_id === shop.id && (pr.status === 'approved' || pr.status === 'transferred'))
+        .reduce((sum, pr) => sum + Number(pr.amount), 0);
+
+      return {
+        shop_id: shop.id,
+        shop_name: shop.name,
+        total_earnings_95pct: totalEarnings95,
+        current_balance: Math.max(0, totalEarnings95 - totalWithdrawn - pendingWithdrawals),
+        total_withdrawn: totalWithdrawn,
+        pending_clearance: pendingWithdrawals
+      };
+    });
+
+  const platformAdminEarnings = orders
+    .filter((ord) => ord.payment_status === 'paid')
+    .reduce((sum, ord) => {
+      let rev = 0;
+      ord.items.forEach((item) => {
+        rev += item.is_admin_shop ? item.total_price : item.admin_commission_5pct;
+      });
+      return sum + rev;
+    }, 0);
+
+  /* ------------------------------ PAYOUTS ----------------------------- */
+
+  const requestPayout = async (
+    shopId: string,
+    _shopName: string,
+    amount: number,
+    method: 'bkash' | 'nagad' | 'bank',
+    accountNum: string
+  ) => {
+    if (LIVE) {
+      await api.apiInsertPayout({ shop_id: shopId, amount, payment_method: method, account_number: accountNum });
+      const refreshed = await api.fetchPayouts();
+      setPayoutRequests(
+        (refreshed as any[]).map((r) => ({
+          ...r,
+          shop_name: shops.find((s) => s.id === r.shop_id)?.name ?? 'Vendor',
+          amount: Number(r.amount)
+        }))
+      );
+      return;
+    }
+    setPayoutRequests((prev) => [
+      {
+        id: `payout_${Date.now()}`,
+        shop_id: shopId,
+        shop_name: _shopName,
+        amount,
+        payment_method: method,
+        account_number: accountNum,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      },
+      ...prev
+    ]);
+  };
+
+  const approvePayout = async (requestId: string) => {
+    setPayoutRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId
+          ? { ...req, status: 'transferred', updated_at: new Date().toISOString() }
+          : req
+      )
+    );
+    if (LIVE) {
+      await api.apiUpdatePayoutStatus(requestId, 'transferred'); // trigger deducts wallet
+      setDbWallets(await api.fetchWallets());
+    }
+  };
+
+  const rejectPayout = async (requestId: string) => {
+    setPayoutRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId
+          ? { ...req, status: 'rejected', updated_at: new Date().toISOString() }
+          : req
+      )
+    );
+    if (LIVE) {
+      await api.apiUpdatePayoutStatus(requestId, 'rejected');
+    }
+  };
+
+  return (
+    <StoreContext.Provider
+      value={{
+        isLoading,
+        isLiveMode: LIVE,
+
+        users,
+        currentUser,
+        signIn,
+        signUp,
+        logout,
+        authModalOpen,
+        setAuthModalOpen,
+
+        products,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+
+        shops,
+        createShop,
+        updateShop,
+        toggleShopActive,
+
+        cart,
+        addToCart,
+        removeFromCart,
+        updateCartQuantity,
+        clearCart,
+        cartTotal,
+        cartCount,
+
+        orders,
+        placeOrder,
+        updateOrderStatus,
+
+        vendorWallets,
+        payoutRequests,
+        requestPayout,
+        approvePayout,
+        rejectPayout,
+        platformAdminEarnings,
+
+        searchQuery,
+        setSearchQuery,
+        selectedCategory,
+        setSelectedCategory,
+        selectedShopId,
+        setSelectedShopId,
+        priceRange,
+        setPriceRange
+      }}
+    >
+      {children}
+    </StoreContext.Provider>
+  );
+};
+
+export const useStore = () => {
+  const context = useContext(StoreContext);
+  if (!context) throw new Error('useStore must be used within a StoreProvider');
+  return context;
+};
