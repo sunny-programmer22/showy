@@ -46,14 +46,6 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
   </section>
 );
 
-const PlaceholderNote: React.FC = () => (
-  <p className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800 leading-relaxed">
-    One detail remains: replace <span className="underline">[Full Registered Address]</span> with your real
-    business address once registered. This template is not legal advice — consider having a lawyer review
-    your final Privacy Policy and Terms &amp; Conditions.
-  </p>
-);
-
 /* -------------------------------- About ---------------------------------- */
 
 export const AboutPage: React.FC<{ onBack: () => void; onNavigate?: (page: string) => void }> = ({ onBack, onNavigate }) => (
@@ -188,7 +180,7 @@ export const PrivacyPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
     <Section title="1. Who We Are">
       <p>
         Showy ("Showy", "we", "us") operates the showy.jubair.bond marketplace.
-        Registered office: [Full Registered Address], Bangladesh. Contact: siddiknurealam1@gmail.com · 01863875033.
+        Registered office: Gaibandha, Rangpur, Bangladesh. Contact: siddiknurealam1@gmail.com · 01863875033.
       </p>
     </Section>
     <Section title="2. Data We Collect">
@@ -211,7 +203,6 @@ export const PrivacyPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
     <Section title="6. Your Rights">
       <p>You may request access, correction, or deletion of your personal data by emailing siddiknurealam1@gmail.com. Deleting an account removes profile data; completed order records may be retained legally.</p>
     </Section>
-    <PlaceholderNote />
   </Shell>
 );
 
@@ -222,7 +213,7 @@ export const TermsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
     <Section title="1. Agreement">
       <p>
         By using Showy (showy.jubair.bond) you agree to these terms with Showy,
-        [Full Registered Address], Bangladesh (siddiknurealam1@gmail.com · 01863875033). If you do not agree, please do not use the platform.
+        Gaibandha, Rangpur, Bangladesh (siddiknurealam1@gmail.com · 01863875033). If you do not agree, please do not use the platform.
       </p>
     </Section>
     <Section title="2. Accounts & Eligibility">
@@ -244,8 +235,7 @@ export const TermsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
       <p>The service is provided "as is". To the maximum extent permitted by law, Showy's aggregate liability for any claim is limited to the commission earned on the relevant order. Nothing limits liability that cannot be limited by law.</p>
     </Section>
     <Section title="8. Governing Law & Changes">
-      <p>These terms are governed by the laws of Bangladesh, courts of Dhaka having exclusive jurisdiction. We may update these terms; material changes will be announced on the site with a revised effective date.</p>
+      <p>These terms are governed by the laws of Bangladesh, courts of Gaibandha, Rangpur having exclusive jurisdiction. We may update these terms; material changes will be announced on the site with a revised effective date.</p>
     </Section>
-    <PlaceholderNote />
   </Shell>
 );
