@@ -234,7 +234,7 @@ const Router: React.FC = () => {
         break;
       default:
         setSeo({
-          title: 'Showy — Online Shopping Bangladesh | Multi-Vendor Marketplace',
+          title: 'Showy Shop — Online Shopping Bangladesh | Multi-Vendor Marketplace',
           description: 'Shop jerseys, fashion, gadgets & more from verified Bangladeshi sellers on Showy. bKash/Nagad OTP checkout, cash on delivery nationwide. Open your own shop in minutes.',
           path: '/'
         });

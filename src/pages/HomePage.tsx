@@ -214,9 +214,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
       {/* ===== SEO content block ===== */}
       <section className="mt-14 bg-slate-50 border-t border-slate-200/70">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-4 text-xs leading-relaxed text-slate-500">
-          <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Online Shopping in Bangladesh with Showy</h2>
+          <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Showy Shop — Online Shopping in Bangladesh</h2>
           <p>
-            Showy is a <strong className="text-slate-600">multi-vendor online marketplace in Bangladesh</strong> where you can
+            Showy Shop is a <strong className="text-slate-600">multi-vendor online marketplace in Bangladesh</strong> where you can
             buy sports jerseys, fashion, electronics, gadgets and more from verified sellers — or{' '}
             <button onClick={() => onNavigate('create-shop')} className="font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2">open your own online shop</button>{' '}
             in minutes and keep 95% of every sale.
