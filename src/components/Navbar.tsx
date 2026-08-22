@@ -15,6 +15,7 @@ import {
   Package
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useLang } from '../lib/i18n';
 import logo from '../assets/logo.png';
 
 interface NavbarProps {
@@ -33,6 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
     shops,
     setAuthModalOpen
   } = useStore();
+  const { lang, toggleLang, t } = useLang();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -80,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
           <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md relative">
             <input
               type="text"
-              placeholder="Search products, brands or shops..."
+              placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-20 py-2 bg-slate-100/90 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/60 text-sm rounded-full border border-slate-200/70 shadow-inner transition"
@@ -144,6 +146,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
 
           {/* User Controls & Cart */}
           <div className="flex items-center space-x-1 sm:space-x-2.5 shrink-0">
+            {/* Language toggle EN / বাং */}
+            <button
+              onClick={toggleLang}
+              aria-label="Switch language"
+              title="English / বাংলা"
+              className="px-2 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-[11px] font-extrabold text-slate-700 transition shrink-0"
+            >
+              {lang === 'en' ? 'বাং' : 'EN'}
+            </button>
+
             {currentUser ? (
               /* Logged-in user menu */
               <div className="relative">
@@ -220,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
                 onClick={() => setAuthModalOpen(true)}
                 className="btn-shine flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl transition shadow-cta"
               >
-                <User className="w-3.5 h-3.5" /> Sign In
+                <User className="w-3.5 h-3.5" /> {t('signIn')}
               </button>
             )}
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Star, ShoppingCart, ArrowLeft, Store, ShieldCheck, Minus, Plus, Truck, RefreshCw, BadgePercent, Ban } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useLang } from '../lib/i18n';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types';
 
@@ -20,6 +21,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onGoToCart
 }) => {
   const { addToCart, shops, products, variants } = useStore();
+  const { t } = useLang();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
@@ -219,11 +221,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   : needsSelection || effectiveStock === 0 ? 'bg-slate-300 cursor-not-allowed'
                   : 'bg-brand-600 hover:bg-brand-700 shadow-brand-100 active:scale-[0.98]'}`}>
               <ShoppingCart className="w-4 h-4" />
-              {added ? 'Added to Cart ✓' : 'Add to Cart'}
+              {added ? t('addedToCart') : t('addToCart')}
             </button>
             <button onClick={() => { handleAddToCart(); setTimeout(onGoToCart, 400); }} disabled={needsSelection || effectiveStock === 0}
               className="px-5 py-3.5 rounded-xl font-bold text-sm bg-slate-900 hover:bg-slate-800 text-white transition shadow-md disabled:bg-slate-300">
-              Buy Now
+              {t('buyNow')}
             </button>
           </div>
 

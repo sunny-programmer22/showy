@@ -3,6 +3,7 @@ import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight, Store } from 'lucide-r
 import { useStore } from '../context/StoreContext';
 import { EmptyState } from './ui/EmptyState';
 import { cartItemKey } from '../types';
+import { useLang } from '../lib/i18n';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface CartDrawerProps {
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheckout }) => {
   const { cart, removeFromCart, updateCartQuantity, cartTotal, shops } = useStore();
+  const { t } = useLang();
 
   // Close on Escape (a11y)
   useEffect(() => {
@@ -48,7 +50,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
         <div className="flex items-center justify-between p-5 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-brand-600" />
-            <h2 className="font-extrabold text-lg text-slate-900">Your Cart</h2>
+            <h2 className="font-extrabold text-lg text-slate-900">{t('yourCart')}</h2>
           </div>
           <button onClick={onClose} aria-label="Close cart" className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X className="w-5 h-5" /></button>
         </div>
@@ -125,7 +127,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, onCheck
             </div>
             <button onClick={() => { onClose(); onCheckout(); }}
               className="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm rounded-xl transition shadow-lg shadow-brand-100 flex items-center justify-center gap-2 active:scale-[0.98]">
-              Proceed to Checkout <ArrowRight className="w-4 h-4" />
+              {t('checkout')} <ArrowRight className="w-4 h-4" />
             </button>
             <p className="text-[10px] text-center text-slate-400 font-medium">
               Secure payment via bKash / Nagad OTP verification · COD available

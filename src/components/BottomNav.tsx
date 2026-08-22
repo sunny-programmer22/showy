@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, LayoutGrid, ShoppingCart, Store, Package } from 'lucide-react';
+import { useLang, StringKey } from '../lib/i18n';
 
 interface BottomNavProps {
   activePage: string;
@@ -10,17 +11,17 @@ interface BottomNavProps {
 
 interface Tab {
   key: string;
-  label: string;
+  labelKey: StringKey;
   icon: typeof Home;
   match: string[];
 }
 
 const TABS: Tab[] = [
-  { key: 'home', label: 'Home', icon: Home, match: ['home'] },
-  { key: 'products', label: 'Browse', icon: LayoutGrid, match: ['products', 'product-detail'] },
-  { key: '__cart', label: 'Cart', icon: ShoppingCart, match: [] },
-  { key: 'shops', label: 'Shops', icon: Store, match: ['shops', 'shop-detail'] },
-  { key: 'orders', label: 'Orders', icon: Package, match: ['orders', 'order-confirmation'] }
+  { key: 'home', labelKey: 'home', icon: Home, match: ['home'] },
+  { key: 'products', labelKey: 'browse', icon: LayoutGrid, match: ['products', 'product-detail'] },
+  { key: '__cart', labelKey: 'cart', icon: ShoppingCart, match: [] },
+  { key: 'shops', labelKey: 'shops', icon: Store, match: ['shops', 'shop-detail'] },
+  { key: 'orders', labelKey: 'orders', icon: Package, match: ['orders', 'order-confirmation'] }
 ];
 
 /** Mobile-only bottom tab bar (desktop keeps the top navbar). */
@@ -29,16 +30,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   cartCount,
   onNavigate,
   onOpenCart,
-}) => (
-  <nav
-    aria-label="Mobile navigation"
-    className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass border-t border-slate-200/70 shadow-[0_-8px_24px_-16px_rgb(15_23_42/0.25)] pb-[env(safe-area-inset-bottom)]"
-  >
-    <div className="flex items-stretch">
-      {TABS.map((tab) => {
-        const { key, label, icon: Icon, match } = tab;
-        const isCart = key === '__cart';
-        const active = !isCart && match.includes(activePage);
+}) => {
+  const { t } = useLang();
+  return (
+    <nav
+      aria-label="Mobile navigation"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass border-t border-slate-200/70 shadow-[0_-8px_24px_-16px_rgb(15_23_42/0.25)] pb-[env(safe-area-inset-bottom)]"
+    >
+      <div className="flex items-stretch">
+        {TABS.map((tab) => {
+          const { key, labelKey, icon: Icon, match } = tab;
+          const label = t(labelKey);
+          const isCart = key === '__cart';
+          const active = !isCart && match.includes(activePage);
         return (
           <button
             key={key}
@@ -58,12 +62,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               )}
             </span>
             <span className="text-[10px] font-bold tracking-wide">{label}</span>
-            {active && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full bg-brand-500" />
-            )}
-          </button>
-        );
+          {active && (
+            <span className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full bg-brand-500" />
+          )}
+        </button>
+      );
       })}
-    </div>
-  </nav>
-);
+      </div>
+    </nav>
+  );
+};
