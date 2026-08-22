@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, ShoppingCart, ArrowLeft, Store, ShieldCheck, Minus, Plus, Truck, RefreshCw, BadgePercent } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, Store, ShieldCheck, Minus, Plus, Truck, RefreshCw, BadgePercent, Ban } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types';
@@ -152,9 +152,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <p className="text-[10px] text-slate-400">Guaranteed</p>
             </div>
             <div className="text-center p-3 bg-white border border-slate-200 rounded-xl">
-              <RefreshCw className="w-5 h-5 mx-auto text-amber-600 mb-1" />
-              <p className="text-[10px] font-bold text-slate-700">7-Day Return</p>
-              <p className="text-[10px] text-slate-400">Easy Policy</p>
+              {product.is_returnable !== false ? (
+                <>
+                  <RefreshCw className="w-5 h-5 mx-auto text-amber-600 mb-1" />
+                  <p className="text-[10px] font-bold text-slate-700">7-Day Return</p>
+                  <p className="text-[10px] text-slate-400">Easy Policy</p>
+                </>
+              ) : (
+                <>
+                  <Ban className="w-5 h-5 mx-auto text-slate-400 mb-1" />
+                  <p className="text-[10px] font-bold text-slate-700">No Returns</p>
+                  <p className="text-[10px] text-slate-400">Final Sale</p>
+                </>
+              )}
             </div>
           </div>
 

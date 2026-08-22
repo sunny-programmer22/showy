@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   reviews_count  INTEGER NOT NULL DEFAULT 0,
   is_featured    BOOLEAN NOT NULL DEFAULT FALSE,
   is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+  is_returnable  BOOLEAN NOT NULL DEFAULT TRUE, -- seller opt-out for returns
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

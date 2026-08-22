@@ -51,6 +51,8 @@ export interface Product {
   reviews_count: number;
   is_featured: boolean;
   is_active: boolean;
+  /** Optional seller choice — when explicitly false, no returns accepted. Undefined/true = 7-day return. */
+  is_returnable?: boolean;
   created_at: string;
 }
 

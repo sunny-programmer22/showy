@@ -154,6 +154,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     reviews_count: 214,
     is_featured: true,
     is_active: true,
+    is_returnable: false,
     created_at: daysAgo(2)
   },
   {
@@ -252,6 +253,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     reviews_count: 58,
     is_featured: false,
     is_active: true,
+    is_returnable: false,
     created_at: daysAgo(5)
   },
   {

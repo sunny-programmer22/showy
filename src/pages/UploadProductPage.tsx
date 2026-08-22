@@ -21,7 +21,8 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
     price: '',
     discount_price: '',
     stock: '10',
-    is_featured: false
+    is_featured: false,
+    is_returnable: true
   });
 
   const [images, setImages] = useState<string[]>(['']);
@@ -84,6 +85,7 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
         stock: Number(form.stock),
         images: images.filter((img) => img.trim() !== ''),
         is_featured: form.is_featured,
+        is_returnable: form.is_returnable,
         is_active: true
       });
       setSuccess(true);
@@ -203,6 +205,12 @@ export const UploadProductPage: React.FC<UploadProductPageProps> = ({ onBack }) 
             <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
               className="w-4 h-4 accent-brand-600" />
             Feature this product on homepage
+          </label>
+
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer w-fit">
+            <input type="checkbox" checked={form.is_returnable} onChange={(e) => setForm({ ...form, is_returnable: e.target.checked })}
+              className="w-4 h-4 accent-emerald-600" />
+            Accept returns (shows a 7-day return badge — uncheck for final sale)
           </label>
         </section>
 
