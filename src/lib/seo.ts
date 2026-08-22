@@ -24,10 +24,13 @@ export const setSeo = ({ title, description, path }: SeoInput) => {
   const fullTitle = title.includes('Showy') ? title : `${title} | Showy`;
   document.title = fullTitle;
 
+  // Match GitHub Pages' final URL form (directories end with "/")
+  const canonicalPath = path === '/' ? '/' : `${path.replace(/\/+$/, '')}/`;
+
   setMetaAttr('meta[name="description"]', 'content', description);
   setMetaAttr('meta[property="og:title"]', 'content', fullTitle);
   setMetaAttr('meta[property="og:description"]', 'content', description);
-  setMetaAttr('meta[property="og:url"]', 'content', `${SITE}${path}`);
+  setMetaAttr('meta[property="og:url"]', 'content', `${SITE}${canonicalPath}`);
   setMetaAttr('meta[name="twitter:title"]', 'content', fullTitle);
   setMetaAttr('meta[name="twitter:description"]', 'content', description);
 
@@ -37,7 +40,7 @@ export const setSeo = ({ title, description, path }: SeoInput) => {
     canonical.rel = 'canonical';
     document.head.appendChild(canonical);
   }
-  canonical.href = `${SITE}${path}`;
+  canonical.href = `${SITE}${canonicalPath}`;
 };
 
 export const SITE_URL = SITE;
