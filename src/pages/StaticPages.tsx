@@ -53,7 +53,7 @@ export const AboutPage: React.FC<{ onBack: () => void; onNavigate?: (page: strin
     <Section title="Our Mission">
       <p>
         Showy exists to make selling online in Bangladesh effortless. We connect independent merchants
-        with shoppers across all 64 districts â€” giving every seller a beautiful storefront in minutes and
+        with shoppers across all 64 districts — giving every seller a beautiful storefront in minutes and
         every buyer a trusted place to discover genuine products.
       </p>
     </Section>
@@ -107,9 +107,9 @@ export const ContactPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const subject = encodeURIComponent(`Showy support request from ${name || 'a customer'}`);
-    const body = encodeURIComponent(`${message}\n\nâ€” ${name} (${email})`);
+    const body = encodeURIComponent(`${message}\n\n— ${name} (${email})`);
     window.location.href = `mailto:siddiknurealam1@gmail.com?subject=${subject}&body=${body}`;
-    toast.info('Opening your email appâ€¦');
+    toast.info('Opening your email app…');
   };
 
   return (
@@ -118,7 +118,7 @@ export const ContactPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         {[
           { icon: Mail, label: 'Email', value: 'siddiknurealam1@gmail.com' },
           { icon: Phone, label: 'Hotline', value: '01863875033' },
-          { icon: Clock, label: 'Hours', value: 'Satâ€“Thu, 10am â€“ 7pm' }
+          { icon: Clock, label: 'Hours', value: 'Sat–Thu, 10am – 7pm' }
         ].map((c) => (
           <div key={c.label} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm text-center">
             <c.icon className="w-5 h-5 mx-auto text-brand-600 mb-1.5" />
@@ -148,10 +148,10 @@ export const ContactPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 const FAQS: { q: string; a: string }[] = [
   { q: 'How do I place an order?', a: 'Browse products, pick your size/options if available, add to cart and proceed to checkout. You can pay via bKash or Nagad OTP verification, card, or cash on delivery.' },
   { q: 'Is cash on delivery available?', a: 'Yes. Select "Cash on Delivery" at checkout and pay the courier when your parcel arrives. A confirmation call may be made before dispatch.' },
-  { q: 'How long does delivery take?', a: 'Dhaka deliveries typically arrive in 1â€“3 working days; outside Dhaka in 2â€“5 working days. You can follow the live status on your Orders page.' },
+  { q: 'How long does delivery take?', a: 'Dhaka deliveries typically arrive in 1–3 working days; outside Dhaka in 2–5 working days. You can follow the live status on your Orders page.' },
   { q: 'What is the return policy?', a: 'Most products include a 7-day return window unless the seller marked them as final sale ("No Returns" badge). Items must be unused and in original packaging.' },
   { q: 'How do I open my own shop?', a: 'Create an account, choose "Create Your Shop", add your shop name, logo and payout numbers. Once created you can upload products immediately from the vendor dashboard.' },
-  { q: 'What commission does Showy take?', a: 'A flat 5% platform fee is deducted automatically from each sale through the auto-split engine â€” you keep 95%. Your flagship/admin store pays nothing.' },
+  { q: 'What commission does Showy take?', a: 'A flat 5% platform fee is deducted automatically from each sale through the auto-split engine — you keep 95%. Your flagship/admin store pays nothing.' },
   { q: 'When do I get paid as a seller?', a: 'Earnings appear in your vendor wallet after each paid order. Request a withdrawal anytime to your bKash, Nagad, or bank account from the dashboard wallet tab.' },
   { q: 'Why do some products ask me to choose a size?', a: 'Sellers can define options like S/M/L or colors, each with its own stock and price. The option must be selected before adding that product to the cart.' },
   { q: 'Is my payment information safe?', a: 'Payments are verified directly through bKash/Nagad OTP flows. We never store your mobile wallet PIN or full card details on our servers.' }
@@ -223,13 +223,13 @@ export const TermsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
       <p>Showy is a venue connecting buyers and independent sellers. Sellers are responsible for their listings, accuracy, quality, and fulfilment. Showy facilitates payments, enforces policies, and holds a 5% commission on vendor sales.</p>
     </Section>
     <Section title="4. Payments">
-      <p>Prices are in Bangladeshi Taka (à§³). Payments are processed via bKash/Nagad OTP, cards, or cash on delivery. Payment confirms the order; a transaction ID is issued for each purchase.</p>
+      <p>Prices are in Bangladeshi Taka (৳). Payments are processed via bKash/Nagad OTP, cards, or cash on delivery. Payment confirms the order; a transaction ID is issued for each purchase.</p>
     </Section>
     <Section title="5. Shipping, Returns & Disputes">
       <p>Sellers dispatch per stated timelines. Products carry a 7-day return window unless listed as final sale. Report issues within the window via the Orders page or siddiknurealam1@gmail.com; we mediate disputes between buyers and sellers in good faith.</p>
     </Section>
     <Section title="6. Prohibited Use">
-      <p>Listings and behaviour violating Bangladeshi law â€” counterfeit goods, weapons, drugs, adult content, fraudulent listings, or abuse of other users â€” are prohibited and removed without notice.</p>
+      <p>Listings and behaviour violating Bangladeshi law — counterfeit goods, weapons, drugs, adult content, fraudulent listings, or abuse of other users — are prohibited and removed without notice.</p>
     </Section>
     <Section title="7. Liability">
       <p>The service is provided "as is". To the maximum extent permitted by law, Showy's aggregate liability for any claim is limited to the commission earned on the relevant order. Nothing limits liability that cannot be limited by law.</p>

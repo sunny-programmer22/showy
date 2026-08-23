@@ -123,7 +123,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-          <p>Â© 2026 Showy â€” Complete Multi-Vendor E-Commerce Platform.</p>
+          <p>Â© 2026 Showy — Complete Multi-Vendor E-Commerce Platform.</p>
           <div className="flex items-center gap-4">
             <button onClick={go('privacy')} className="hover:text-brand-400 transition-colors">Privacy Policy</button>
             <span aria-hidden="true" className="text-slate-700">Â·</span>
