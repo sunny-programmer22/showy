@@ -3,6 +3,7 @@ import { Product, Shop, UserProfile, CartItem, Order, PayoutRequest, VendorWalle
 import { INITIAL_USERS, INITIAL_SHOPS, INITIAL_PRODUCTS, INITIAL_ORDERS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import * as api from '../lib/api';
+import { toast } from '../components/ui/Toast';
 
 interface StoreContextType {
   // Loading / mode
@@ -46,6 +47,8 @@ interface StoreContextType {
   orders: Order[];
   placeOrder: (shipping: any, paymentMethod: PaymentMethod, transactionId?: string, discount?: { amount: number; code: string }) => Promise<Order>;
   verifyOrderPayment: (orderId: string, paid: boolean) => Promise<void>;
+  toggleShopVerified: (shopId: string) => Promise<void>;
+  fetchAdminTransactions: () => Promise<any[]>;
   updateOrderStatus: (orderId: string, itemId: string, status: OrderItem['status']) => Promise<void>;
 
   // Financials & Commission (5% split engine)
@@ -497,7 +500,46 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         o.id === orderId ? { ...o, payment_status: paid ? 'paid' : 'pending' } : o
       )
     );
-    if (LIVE) await api.apiUpdateOrderPaymentStatus(orderId, paid ? 'paid' : 'pending');
+    if (!LIVE) return;
+    await api.apiUpdateOrderPaymentStatus(orderId, paid ? 'paid' : 'pending');
+    if (paid) {
+      const { error } = await supabase!
+        .from('order_items')
+        .update({ status: 'processing' })
+        .eq('order_id', orderId)
+        .eq('status', 'pending');
+      if (!error) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  items: o.items.map((i) => (i.status === 'pending' ? { ...i, status: 'processing' as const } : i)),
+                  overall_status: o.overall_status === 'shipped' || o.overall_status === 'delivered' ? o.overall_status : 'processing'
+                }
+              : o
+          )
+        );
+      }
+    }
+  };
+
+  const toggleShopVerified = async (shopId: string) => {
+    const current = shops.find((s) => s.id === shopId)?.is_verified ?? false;
+    setShops((prev) => prev.map((s) => (s.id === shopId ? { ...s, is_verified: !current } : s)));
+    if (!LIVE) return;
+    const { error } = await supabase!.from('shops').update({ is_verified: !current }).eq('id', shopId);
+    if (error) throw error;
+  };
+
+  const fetchAdminTransactions = async () => {
+    const { data, error } = await supabase!
+      .from('v_shop_transactions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    return data ?? [];
   };
 
   /* -------------------- FINANCIALS (wallets & admin) ------------------ */
@@ -664,6 +706,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         placeOrder,
         updateOrderStatus,
         verifyOrderPayment,
+        toggleShopVerified,
+        fetchAdminTransactions,
 
         vendorWallets,
         payoutRequests,

@@ -14,7 +14,7 @@ interface AdminPanelProps {
   onNavigate: (page: string) => void;
 }
 
-type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'coupons' | 'security';
+  type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'transactions' | 'coupons' | 'security';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
   const {
@@ -87,12 +87,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
   const pendingPayouts = payoutRequests.filter((pr) => pr.status === 'pending');
   const pendingPayoutTotal = pendingPayouts.reduce((sum, pr) => sum + pr.amount, 0);
 
+  const { fetchAdminTransactions, toggleShopVerified } = useStore();
+  const [txns, setTxns] = useState<any[]>([]);
+  const [txnsLoaded, setTxnsLoaded] = useState(false);
+  useEffect(() => {
+    if (tab === 'transactions' && !txnsLoaded) {
+      fetchAdminTransactions()
+        .then((d) => { setTxns(d as any[]); setTxnsLoaded(true); })
+        .catch((e: Error) => toast.error(`Could not load transactions — did you run patch 007? ${e.message}`));
+    }
+  }, [tab]);
+
+  const exportTxnsCsv = () => {
+    const rows = [['Date','Order','Shop','Product','Qty','Line Total','Commission (5%)','Seller Net (95%)','Method','Ref','Payment']];
+    txns.forEach((t) => rows.push([new Date(t.created_at).toLocaleString(), t.order_number, t.shop_name, t.product_title, String(t.quantity), String(t.line_total), String(t.commission), String(t.seller_net), t.payment_method, t.transaction_id || '-', t.payment_status]));
+    const blob = new Blob([rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `showy-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   const TABS: { key: Tab; label: string; icon: any }[] = [
     { key: 'overview', label: 'Platform Overview', icon: TrendingUp },
     { key: 'shops', label: 'Shop Management', icon: StoreIcon },
     { key: 'orders', label: 'Global Orders', icon: Package },
-    { key: 'payouts', label: 'Vendor Payouts', icon: Wallet },
-    { key: 'coupons', label: 'Coupons & Promos', icon: TicketPercent },
+{ key: 'payouts', label: 'Vendor Payouts', icon: Wallet },
+{ key: 'transactions', label: 'Transactions', icon: ScrollText },
+{ key: 'coupons', label: 'Coupons & Promos', icon: TicketPercent },
     { key: 'security', label: 'Security Log', icon: ScrollText }
   ];
 
@@ -273,6 +296,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                           {shop.is_active ? 'Active' : 'Suspended'}
                         </button>
                       )}
+                      {!shop.is_admin_shop && (
+                        <button onClick={() => {
+                            confirmDialog({
+                              title: shop.is_verified ? 'Remove verified badge?' : 'Mark shop as verified?',
+                              message: shop.is_verified
+                                ? `"${shop.name}" will lose its Verified badge on the marketplace.`
+                                : `"${shop.name}" will display a green Verified badge to all customers.`,
+                              confirmText: shop.is_verified ? 'Remove Badge' : 'Verify Shop'
+                            }).then((ok) => {
+                              if (ok) toggleShopVerified(shop.id).then(() => toast.success(shop.is_verified ? 'Badge removed.' : `${shop.name} is now Verified.`)).catch((err) => toast.error(`Action failed: ${err.message}`));
+                            });
+                          }}
+                          className={`ml-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase transition ${
+                            shop.is_verified ? 'bg-sky-100 text-sky-700 hover:bg-sky-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}>
+                          <ShieldAlert className="w-3 h-3" />
+                          {shop.is_verified ? 'Verified' : 'Unverified'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -303,11 +345,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                 <p className="font-extrabold text-slate-900">৳{order.total_amount.toLocaleString()}</p>
                 {order.transaction_id && <p className="text-[9px] font-mono text-slate-400 break-all">{order.transaction_id}</p>}
               </div>
-              <div className="min-w-[120px]">
-                {order.payment_status === 'pending' && (order.payment_method === 'bkash' || order.payment_method === 'nagad') ? (
+              <div className="min-w-[120px] flex flex-col items-start gap-1">
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${order.payment_method === 'cod' ? 'bg-slate-200 text-slate-600' : 'bg-blue-100 text-blue-700'}`}>
+                  {order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}
+                </span>
+                {order.payment_status === 'pending' && order.payment_method !== 'cod' ? (
                   <button onClick={() =>
                       verifyOrderPayment(order.id, true)
-                        .then(() => toast.success(`Payment verified for ${order.order_number}`))
+                        .then(() => toast.success(`Payment verified — items moved to Processing`))
                         .catch((err) => toast.error(err.message))
                     }
                     className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold uppercase transition">
@@ -390,6 +435,60 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
           )}
         </div>
       )}
+      {/* TRANSACTIONS LEDGER */}
+      {tab === 'transactions' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Transaction Ledger</h2>
+              <p className="text-xs text-slate-500">Every sold item across all shops — commission & seller earnings. 5% platform / 95% seller.</p>
+            </div>
+            <button onClick={exportTxnsCsv} disabled={txns.length === 0}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-xl text-xs font-extrabold uppercase transition">
+              Export CSV
+            </button>
+          </div>
+          {txns.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-500 bg-white rounded-2xl border border-slate-200">No transactions yet. They appear here the moment orders are placed.</div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>{['Date','Order','Shop','Product','Qty','Line Total','Commission (5%)','Seller Net (95%)','Method','Ref','Payment'].map((h) => (
+                    <th key={h} className="px-4 py-3 font-extrabold text-slate-600 uppercase text-[10px] whitespace-nowrap">{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {txns.map((t, i) => (
+                    <tr key={i} className="hover:bg-purple-50/30">
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(t.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 font-mono text-slate-500">{t.order_number}</td>
+                      <td className="px-4 py-3 font-bold text-slate-700">{t.shop_name}</td>
+                      <td className="px-4 py-3 text-slate-700">{t.product_title}{t.quantity > 1 ? ` ×${t.quantity}` : ''}</td>
+                      <td className="px-4 py-3 font-extrabold text-slate-900 whitespace-nowrap">{t.line_total.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-purple-700 font-bold">{t.commission.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-emerald-700 font-bold">{t.seller_net.toLocaleString()}</td>
+                      <td className="px-4 py-3 uppercase font-bold text-slate-600">{t.payment_method}</td>
+                      <td className="px-4 py-3 font-mono text-[10px] text-slate-400 max-w-[140px] truncate">{t.transaction_id || '-'}</td>
+                      <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${t.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : t.payment_status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>{t.payment_status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-purple-50/50 border-t-2 border-purple-200 font-extrabold">
+                  <tr>
+                    <td colSpan={4} className="px-4 py-3 text-right text-[10px] uppercase tracking-wider text-slate-500">Totals ({txns.length} items)</td>
+                    <td className="px-4 py-3">{txns.reduce((s, t) => s + Number(t.line_total), 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-purple-700">{txns.reduce((s, t) => s + Number(t.commission), 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-emerald-700">{txns.reduce((s, t) => s + Number(t.seller_net), 0).toLocaleString()}</td>
+                    <td colSpan={4}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* COUPONS */}
       {tab === 'coupons' && (
         <div className="space-y-5">

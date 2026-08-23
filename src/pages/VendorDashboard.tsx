@@ -212,6 +212,13 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                     <div className="text-right">
                       <p className="text-sm font-extrabold text-slate-900">৳{item.total_price.toLocaleString()}</p>
                       <p className="text-[10px] text-emerald-600 font-bold">You receive: ৳{item.vendor_amount_95pct.toLocaleString()}</p>
+                      <span className={`mt-1 inline-block px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                        order.payment_method === 'cod' ? 'bg-slate-200 text-slate-600'
+                        : order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {order.payment_method === 'cod' ? 'COD' : order.payment_status === 'paid' ? '✓ Paid' : '⏳ Awaiting payment'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-100">

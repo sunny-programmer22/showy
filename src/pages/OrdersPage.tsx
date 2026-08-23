@@ -178,6 +178,9 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onBack }) => {
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <p className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wide mb-1">Payment</p>
                   <p className="font-semibold text-slate-800 capitalize">{order.payment_method} — {order.payment_status}</p>
+                  {order.payment_status === 'paid' && (
+                    <span className="inline-block mb-1.5 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-extrabold uppercase">✓ Payment Verified</span>
+                  )}
                   {order.transaction_id && <p className="font-mono text-slate-400">TrxID: {order.transaction_id}</p>}
                 </div>
               </div>
