@@ -34,7 +34,7 @@ Good titles → good Google titles → long-tail traffic.
 
 ## Core keywords already placed (meta tags + homepage copy)
 
-- Brand: showy, showy bd, showy bangladesh, showy marketplace
+- Brand: showy store, showy store bd, showy, showy bd, showy bangladesh, showy marketplace
 - Platform: online shopping bangladesh / bd, multi-vendor marketplace,
   ecommerce platform bangladesh, online shop bangladesh, best online shopping site bd
 - Payments: bkash payment online shopping, nagad payment online shopping,
