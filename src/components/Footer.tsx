@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ShoppingBag, ShieldCheck, Truck, Lock, Percent, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -41,7 +41,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {[
             { icon: Truck, tint: 'bg-brand-500/10 text-brand-400', title: 'Fast Nationwide Delivery', desc: 'Coverage across all 64 districts in Bangladesh' },
             { icon: ShieldCheck, tint: 'bg-emerald-500/10 text-emerald-400', title: '100% Genuine Guarantee', desc: 'Verified shops & direct official imports' },
-            { icon: Percent, tint: 'bg-purple-500/10 text-purple-400', title: '5% Fair Commission Model', desc: 'Transparent payout split for all vendor stores' },
+            { icon: Percent, tint: 'bg-purple-500/10 text-purple-400', title: 'Best Prices Guaranteed', desc: 'Fair deals from verified sellers nationwide' },
             { icon: Lock, tint: 'bg-amber-500/10 text-amber-400', title: 'Automated bKash / Nagad', desc: 'Instant OTP payment verification engine' }
           ].map((f) => (
             <div key={f.title} className="flex items-start space-x-3 group">
@@ -97,7 +97,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <NavLink label="Vendor Dashboard" page="vendor-dashboard" />
               {!userShop && <NavLink label="Create Your Shop" page="create-shop" />}
               {userShop && <NavLink label="Upload New Product" page="upload-product" />}
-              <li><span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold"><Percent className="w-3.5 h-3.5" />95% Net Revenue Share</span></li>
+              <li><span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold"><Percent className="w-3.5 h-3.5" />Transparent Payouts</span></li>
             </ul>
           </div>
 
@@ -116,19 +116,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               A trusted multi-vendor marketplace connecting verified merchants with buyers across Bangladesh.
             </p>
             <div className="p-3.5 bg-slate-900/80 rounded-xl border border-white/5 text-[11px] text-slate-400 leading-relaxed">
-              <span className="font-bold text-brand-400">5% Auto Split Engine:</span>{' '}
-              Vendor sales automatically deduct 5% for platform maintenance and credit 95% to the vendor ledger.
+              <span className="font-bold text-brand-400">Fast Payouts:</span>{' '}
+              Vendor earnings are settled securely to bKash, Nagad or bank accounts.
             </div>
           </div>
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-          <p>© 2026 Showy — Complete Multi-Vendor E-Commerce Platform.</p>
+          <p>Â© 2026 Showy â€” Complete Multi-Vendor E-Commerce Platform.</p>
           <div className="flex items-center gap-4">
             <button onClick={go('privacy')} className="hover:text-brand-400 transition-colors">Privacy Policy</button>
-            <span aria-hidden="true" className="text-slate-700">·</span>
+            <span aria-hidden="true" className="text-slate-700">Â·</span>
             <button onClick={go('terms')} className="hover:text-brand-400 transition-colors">Terms &amp; Conditions</button>
-            <span aria-hidden="true" className="text-slate-700">·</span>
+            <span aria-hidden="true" className="text-slate-700">Â·</span>
             <p className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               All systems operational

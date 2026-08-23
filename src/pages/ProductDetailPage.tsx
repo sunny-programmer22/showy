@@ -4,6 +4,9 @@ import { useStore } from '../context/StoreContext';
 import { useLang } from '../lib/i18n';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types';
+import * as api from '../lib/api';
+import type { ProductReview } from '../lib/api';
+import { toast } from '../components/ui/Toast';
 
 interface ProductDetailPageProps {
   product: Product;
@@ -20,7 +23,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onNavigateToShop,
   onGoToCart
 }) => {
-  const { addToCart, shops, products, variants } = useStore();
+  const { addToCart, shops, products, variants, currentUser, isLiveMode, setAuthModalOpen } = useStore();
   const { t } = useLang();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -60,6 +63,38 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     setQty((q) => Math.max(1, Math.min(q, Math.max(1, selectedVariant?.stock ?? product.stock))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariantId]);
+
+  /* ------------------------------ Reviews -------------------------------- */
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [myRating, setMyRating] = useState(5);
+  const [myComment, setMyComment] = useState('');
+  const [savingReview, setSavingReview] = useState(false);
+  const myReview = currentUser ? reviews.find((r) => r.user_id === currentUser.id) : undefined;
+
+  useEffect(() => {
+    if (!isLiveMode) return;
+    api.fetchReviews(product.id).then(setReviews).catch(() => {});
+  }, [product.id, isLiveMode]);
+
+  const submitReview = async () => {
+    if (!currentUser) return;
+    setSavingReview(true);
+    try {
+      const saved = await api.apiUpsertReview(
+        product.id,
+        currentUser.id,
+        currentUser.full_name || 'Customer',
+        myRating,
+        myComment.trim()
+      );
+      setReviews((prev) => [saved, ...prev.filter((r) => r.user_id !== saved.user_id)]);
+      toast.success(myReview ? 'Your review was updated!' : 'Thanks for your review!');
+    } catch (e: any) {
+      toast.error(`Could not save review: ${e.message}`);
+    } finally {
+      setSavingReview(false);
+    }
+  };
 
   const effectivePrice = selectedVariant?.price ?? finalPrice;
   const effectiveStock = selectedVariant ? selectedVariant.stock : product.stock;
@@ -195,7 +230,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
             {!shop?.is_admin_shop && (
               <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3" /> Vendor receives ৳{(effectivePrice * 0.95).toFixed(0)} after automatic 5% platform split
+                <RefreshCw className="w-3 h-3" /> Direct support from the seller
               </p>
             )}
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
@@ -272,6 +307,71 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Ratings & Reviews */}
+      <section className="mt-12 max-w-3xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Ratings &amp; Reviews</h2>
+          <div className="flex items-center gap-1.5 text-sm">
+            <Star className="w-4 h-4 text-amber-400 fill-current" />
+            <span className="font-extrabold text-slate-800">{product.rating}</span>
+            <span className="text-slate-400">({product.reviews_count})</span>
+          </div>
+        </div>
+
+        {currentUser && isLiveMode ? (
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3 mb-5">
+            <p className="text-xs font-bold text-slate-700">{myReview ? 'Update your review' : 'Write a review'}</p>
+            <div className="flex items-center gap-1" role="radiogroup" aria-label="Your rating">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <button key={i} type="button" onClick={() => setMyRating(i + 1)}
+                  aria-label={`${i + 1} star${i ? 's' : ''}`}
+                  className="p-0.5 transition hover:scale-110">
+                  <Star className={`w-6 h-6 ${i < myRating ? 'text-amber-400 fill-current' : 'text-slate-300 fill-none'}`} />
+                </button>
+              ))}
+            </div>
+            <textarea rows={3} value={myComment} onChange={(e) => setMyComment(e.target.value)}
+              placeholder={myReview?.comment || 'Share your experience with this product…'}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <button onClick={submitReview} disabled={savingReview}
+              className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition">
+              {savingReview ? 'Saving…' : myReview ? 'Update Review' : 'Submit Review'}
+            </button>
+          </div>
+        ) : (
+          !isLiveMode ? null : (
+            <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-5 mb-5 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-slate-500">Sign in to rate this product and write a review.</p>
+              <button onClick={() => setAuthModalOpen(true)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] rounded-xl transition shrink-0">
+                Sign In
+              </button>
+            </div>
+          )
+        )}
+
+        {reviews.length > 0 ? (
+          <div className="space-y-3">
+            {reviews.map((r) => (
+              <div key={r.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-xs font-extrabold text-slate-800">{r.user_name || 'Customer'}</p>
+                  <span className="text-[10px] text-slate-400">{new Date(r.created_at).toLocaleDateString('en-GB')}</span>
+                </div>
+                <div className="flex items-center gap-0.5 mb-1.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(r.rating) ? 'text-amber-400 fill-current' : 'text-slate-300 fill-none'}`} />
+                  ))}
+                </div>
+                {r.comment && <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{r.comment}</p>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          isLiveMode && <p className="text-xs text-slate-400">No reviews yet — be the first to review this product.</p>
+        )}
+      </section>
 
       {/* Related Products */}
       {related.length > 0 && (

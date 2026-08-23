@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ArrowLeft, MapPin, CreditCard, Truck, ShieldCheck, Check, ChevronRight, UserPlus, Loader2, TicketPercent, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { PaymentGatewayModal } from '../components/PaymentGatewayModal';
+import { ManualPaymentModal } from '../components/ManualPaymentModal';
 import { toast } from '../components/ui/Toast';
 import { VariantChip } from '../components/ui/VariantChip';
 import { Order, PaymentMethod, ShippingAddress, Coupon, couponDiscountFor } from '../types';
@@ -57,7 +57,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
         return;
       }
       if (cartTotal < coupon.min_order_amount) {
-        toast.error(`This coupon needs a minimum order of ৳${coupon.min_order_amount.toLocaleString()}.`);
+        toast.error(`This coupon needs a minimum order of à§³${coupon.min_order_amount.toLocaleString()}.`);
         return;
       }
       setAppliedCoupon(coupon);
@@ -115,7 +115,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
     if (!validateShippingForm()) return;
     setPaymentMethod(method);
     if (method === 'bkash' || method === 'nagad') {
-      // Launch the automated OTP payment gateway flow
       setGatewayOpen(true);
     } else if (method === 'cod') {
       confirmOrder('COD');
@@ -221,14 +220,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
               <button onClick={() => setShippingMethod('standard')}
                 className={`p-4 rounded-xl border-2 text-left transition ${shippingMethod === 'standard' ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}>
                 <p className="font-extrabold text-sm text-slate-800">Standard</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">3–5 business days</p>
-                <p className="font-extrabold text-sm text-brand-700 mt-1">{cartTotal > 5000 ? 'FREE' : '৳80'}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">3â€“5 business days</p>
+                <p className="font-extrabold text-sm text-brand-700 mt-1">{cartTotal > 5000 ? 'FREE' : 'à§³80'}</p>
               </button>
               <button onClick={() => setShippingMethod('express')}
                 className={`p-4 rounded-xl border-2 text-left transition ${shippingMethod === 'express' ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}>
-                <p className="font-extrabold text-sm text-slate-800">Express ⚡</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">24–48 hours</p>
-                <p className="font-extrabold text-sm text-brand-700 mt-1">৳150</p>
+                <p className="font-extrabold text-sm text-slate-800">Express âš¡</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">24â€“48 hours</p>
+                <p className="font-extrabold text-sm text-brand-700 mt-1">à§³150</p>
               </button>
             </div>
           </section>
@@ -238,7 +237,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
             <h2 className="font-extrabold text-slate-900 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-brand-600" /> Payment Method
             </h2>
-            <p className="text-[11px] text-slate-500 -mt-1">Automated OTP verification — no manual transaction needed!</p>
+            <p className="text-[11px] text-slate-500 -mt-1">Automated OTP verification â€” no manual transaction needed!</p>
 
             <div className="space-y-2.5">
               <button onClick={() => handlePaymentSelect('bkash')}
@@ -248,7 +247,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
                   <span className="px-3 py-1.5 bg-bkash text-white text-xs font-extrabold rounded-lg">bKash</span>
                   <span className="text-left">
                     <span className="block text-sm font-bold text-slate-800">Pay with bKash</span>
-                    <span className="block text-[11px] text-slate-500">SMS OTP → PIN → Instant payment</span>
+                    <span className="block text-[11px] text-slate-500">SMS OTP â†’ PIN â†’ Instant payment</span>
                   </span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-bkash" />
@@ -261,7 +260,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
                   <span className="px-3 py-1.5 bg-nagad text-white text-xs font-extrabold rounded-lg">Nagad</span>
                   <span className="text-left">
                     <span className="block text-sm font-bold text-slate-800">Pay with Nagad</span>
-                    <span className="block text-[11px] text-slate-500">SMS OTP → PIN → Instant payment</span>
+                    <span className="block text-[11px] text-slate-500">SMS OTP â†’ PIN â†’ Instant payment</span>
                   </span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-nagad" />
@@ -309,7 +308,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
                     <p className="text-[10px] text-slate-400">Qty: {quantity}</p>
                   </div>
                   <p className="text-xs font-extrabold text-slate-800 shrink-0">
-                    ৳{(unit * quantity).toLocaleString()}
+                    à§³{(unit * quantity).toLocaleString()}
                   </p>
                 </div>
               );
@@ -317,10 +316,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
           </div>
 
           <div className="space-y-2 pt-2 border-t border-dashed border-slate-200 text-sm">
-            <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>৳{cartTotal.toLocaleString()}</span></div>
+            <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>à§³{cartTotal.toLocaleString()}</span></div>
             <div className="flex justify-between text-slate-600">
               <span>Delivery ({shippingMethod})</span>
-              <span className={shippingFee === 0 ? 'text-emerald-600 font-bold' : ''}>{shippingFee === 0 ? 'FREE' : `৳${shippingFee}`}</span>
+              <span className={shippingFee === 0 ? 'text-emerald-600 font-bold' : ''}>{shippingFee === 0 ? 'FREE' : `à§³${shippingFee}`}</span>
             </div>
             {appliedCoupon && (
               <div className="flex justify-between items-center text-emerald-600">
@@ -329,11 +328,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
                   <button onClick={() => { setAppliedCoupon(null); setCouponCode(''); }} aria-label={`Remove coupon ${appliedCoupon.code}`}
                     className="text-slate-400 hover:text-rose-500 transition"><X className="w-3.5 h-3.5" /></button>
                 </span>
-                <span className="font-bold">−৳{couponDiscount.toLocaleString()}</span>
+                <span className="font-bold">âˆ’à§³{couponDiscount.toLocaleString()}</span>
               </div>
             )}
             <div className="flex justify-between font-extrabold text-base text-slate-900 pt-2 border-t border-slate-200">
-              <span>Total Payable</span><span>৳{grandTotal.toLocaleString()}</span>
+              <span>Total Payable</span><span>à§³{grandTotal.toLocaleString()}</span>
             </div>
           </div>
 
@@ -349,7 +348,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
               </div>
               <button type="button" onClick={handleApplyCoupon} disabled={couponChecking || !couponCode.trim()}
                 className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shrink-0">
-                {couponChecking ? '…' : 'Apply'}
+                {couponChecking ? 'â€¦' : 'Apply'}
               </button>
             </div>
           )}
@@ -364,12 +363,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
         </aside>
       </div>
 
-      {/* bKash / Nagad Automated Gateway Modal */}
-      <PaymentGatewayModal
-        isOpen={gatewayOpen}
-        method={paymentMethod === 'bkash' ? 'bkash' : paymentMethod === 'nagad' ? 'nagad' : null}
+      {/* bKash / Nagad Manual Send-Money Modal */}
+      <ManualPaymentModal
+        isOpen={gatewayOpen && (paymentMethod === 'bkash' || paymentMethod === 'nagad')}
+        method={paymentMethod === 'nagad' ? 'nagad' : 'bkash'}
         amount={grandTotal}
-        onSuccess={(trxId) => {
+        merchantNumber="01863875033"
+        onSubmit={(trxId) => {
           setGatewayOpen(false);
           confirmOrder(trxId);
         }}
@@ -380,7 +380,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
       {placing && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-10 h-10 text-white animate-spin" />
-          <p className="text-white text-sm font-bold">Placing your order securely…</p>
+          <p className="text-white text-sm font-bold">Placing your order securelyâ€¦</p>
         </div>
       )}
     </div>

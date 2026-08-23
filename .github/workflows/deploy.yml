@@ -33,6 +33,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_BKASH_ENABLED: ${{ secrets.VITE_BKASH_ENABLED }}
 
       - name: Generate crawlable pages + dynamic sitemap
         run: node scripts/generate-pages.mjs

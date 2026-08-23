@@ -54,7 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
         <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
         <span>
           Multi-Vendor Marketplace
-          <span className="hidden sm:inline"> • Create Your Own Shop Today! (5% Platform Commission Model)</span>
+          <span className="hidden sm:inline"> • Create Your Own Shop Today!</span>
         </span>
       </div>
 

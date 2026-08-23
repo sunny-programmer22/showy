@@ -45,6 +45,7 @@ interface StoreContextType {
   // Orders
   orders: Order[];
   placeOrder: (shipping: any, paymentMethod: PaymentMethod, transactionId?: string, discount?: { amount: number; code: string }) => Promise<Order>;
+  verifyOrderPayment: (orderId: string, paid: boolean) => Promise<void>;
   updateOrderStatus: (orderId: string, itemId: string, status: OrderItem['status']) => Promise<void>;
 
   // Financials & Commission (5% split engine)
@@ -447,7 +448,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       discount_amount: discount?.amount ?? 0,
       coupon_code: discount?.code.toUpperCase() ?? null,
       payment_method: paymentMethod,
-      payment_status: paymentMethod === 'cod' ? 'pending' : 'paid',
+      payment_status: 'pending',
       transaction_id: transactionId || `TXN${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
       overall_status: 'processing',
       created_at: new Date().toISOString(),
@@ -487,6 +488,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
     );
     if (LIVE) await api.apiUpdateItemStatus(itemId, status, orderId);
+  };
+
+  /** Admin confirms/rejects a manual bKash/Nagad payment. */
+  const verifyOrderPayment = async (orderId: string, paid: boolean) => {
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId ? { ...o, payment_status: paid ? 'paid' : 'pending' } : o
+      )
+    );
+    if (LIVE) await api.apiUpdateOrderPaymentStatus(orderId, paid ? 'paid' : 'pending');
   };
 
   /* -------------------- FINANCIALS (wallets & admin) ------------------ */
@@ -652,6 +663,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         orders,
         placeOrder,
         updateOrderStatus,
+        verifyOrderPayment,
 
         vendorWallets,
         payoutRequests,

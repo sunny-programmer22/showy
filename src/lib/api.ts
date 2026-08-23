@@ -297,7 +297,7 @@ export const apiPlaceOrder = async (
       coupon_code: discount?.code.toUpperCase() ?? null,
       platform_fee_total: platformFeeTotal,
       payment_method: paymentMethod,
-      payment_status: paymentMethod === 'cod' ? 'pending' : 'paid',
+      payment_status: 'pending',
       transaction_id: transactionId || null,
       overall_status: 'processing'
     })
@@ -340,6 +340,16 @@ export const apiUpdateItemStatus = async (
   // Recalculate parent order's overall_status (RPC may not exist yet — ignore errors)
   const rpcErr = (await sb.rpc('sync_order_overall_status', { p_order_id: orderId })).error;
   if (rpcErr) console.warn('sync_order_overall_status RPC missing:', rpcErr.message);
+};
+
+/** Admin confirms a manual bKash/Nagad payment (TrxID or last-4 reference). */
+export const apiUpdateOrderPaymentStatus = async (
+  orderId: string,
+  paymentStatus: Order['payment_status']
+) => {
+  const sb = requireClient();
+  const { error } = await sb.from('orders').update({ payment_status: paymentStatus }).eq('id', orderId);
+  if (error) throw new Error(error.message);
 };
 
 /* ------------------------- Wallets & Payouts ---------------------------- */
@@ -430,6 +440,49 @@ export const fetchAuditLogs = async (): Promise<AuditLogEntry[]> => {
     .limit(100);
   if (error) throw new Error(error.message);
   return (data ?? []) as AuditLogEntry[];
+};
+
+/* ------------------------------- Reviews --------------------------------- */
+
+export interface ProductReview {
+  id: string;
+  product_id: string;
+  user_id: string;
+  user_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export const fetchReviews = async (productId: string): Promise<ProductReview[]> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('product_reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as any[]).map((r) => ({ ...r, rating: n(r.rating) }));
+};
+
+export const apiUpsertReview = async (
+  productId: string,
+  userId: string,
+  userName: string,
+  rating: number,
+  comment: string
+): Promise<ProductReview> => {
+  const sb = requireClient();
+  const { data, error } = await sb
+    .from('product_reviews')
+    .upsert(
+      { product_id: productId, user_id: userId, user_name: userName, rating, comment },
+      { onConflict: 'product_id,user_id' }
+    )
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return { ...(data as any), rating: n((data as any).rating) };
 };
 
 /* ------------------------- Wallets & Payouts ---------------------------- */

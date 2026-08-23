@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Store, ArrowRight, ShieldCheck, Sparkles, Truck, BadgePercent,
   ShoppingBag, TrendingUp, LayoutDashboard
@@ -51,7 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
             </h1>
 
             <p className="animate-fade-up delay-150 text-sm sm:text-base text-slate-300 leading-relaxed">
-              Thousands of products from verified vendors nationwide. Or launch your own store in 2 minutes — keep <strong className="text-emerald-400">95% of every sale</strong>, pay only a flat 5% platform fee.
+              Thousands of products from verified vendors nationwide. Or launch your own store in 2 minutes â€” keep <strong className="text-emerald-400">95% of every sale</strong>, pay only a flat 5% platform fee.
             </p>
 
             <div className="animate-fade-up delay-225 flex flex-wrap gap-3.5 pt-1">
@@ -97,7 +97,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { icon: Truck, title: 'Fast Delivery', desc: 'Standard & express options nationwide', color: 'bg-blue-50 text-blue-600' },
-            { icon: BadgePercent, title: 'Automated bKash / Nagad', desc: 'SMS OTP payment — zero manual steps', color: 'bg-bkash/10 text-bkash' },
+            { icon: BadgePercent, title: 'Automated bKash / Nagad', desc: 'SMS OTP payment â€” zero manual steps', color: 'bg-bkash/10 text-bkash' },
             { icon: ShieldCheck, title: 'Buyer Protection', desc: 'Verified merchants & genuine goods', color: 'bg-emerald-50 text-emerald-600' }
           ].map((f) => (
             <div key={f.title} className="bg-white/90 backdrop-blur rounded-2xl border border-slate-200/70 p-5 shadow-soft hover:shadow-lift hover:-translate-y-1 transition-all duration-300 flex items-center gap-4">
@@ -138,7 +138,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           <div className="max-w-lg space-y-3 relative">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Have something to sell?</h2>
             <p className="text-sm text-emerald-100 leading-relaxed">
-              Join hundreds of independent sellers. Upload products, track orders live, and withdraw earnings to bKash/Nagad anytime — your money, your rules.
+              Join hundreds of independent sellers. Upload products, track orders live, and withdraw earnings to bKash/Nagad anytime â€” your money, your rules.
             </p>
             <button onClick={() => onNavigate('create-shop')}
               className="btn-shine mt-3 px-6 py-3 bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm rounded-xl transition-all duration-300 hover:-translate-y-0.5 shadow-lg flex items-center gap-2 active:scale-95">
@@ -214,16 +214,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
       {/* ===== SEO content block ===== */}
       <section className="mt-14 bg-slate-50 border-t border-slate-200/70">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-4 text-xs leading-relaxed text-slate-500">
-          <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Showy Shop — Online Shopping in Bangladesh</h2>
+          <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Showy Shop â€” Online Shopping in Bangladesh</h2>
           <p>
             Showy Shop is a <strong className="text-slate-600">multi-vendor online marketplace in Bangladesh</strong> where you can
-            buy sports jerseys, fashion, electronics, gadgets and more from verified sellers — or{' '}
+            buy sports jerseys, fashion, electronics, gadgets and more from verified sellers â€” or{' '}
             <button onClick={() => onNavigate('create-shop')} className="font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2">open your own online shop</button>{' '}
-            in minutes and keep 95% of every sale.
+            in minutes with simple, transparent fees.
           </p>
           <p>
             We make online shopping in BD simple and safe: pay with <strong className="text-slate-600">bKash or Nagad OTP verification</strong>,
-            debit/credit cards, or <strong className="text-slate-600">cash on delivery (COD)</strong> anywhere in the country — Dhaka,
+            debit/credit cards, or <strong className="text-slate-600">cash on delivery (COD)</strong> anywhere in the country â€” Dhaka,
             Chattogram, Khulna, Rajshahi, Rangpur, Gaibandha and all 64 districts, delivered nationwide.
           </p>
           <p>

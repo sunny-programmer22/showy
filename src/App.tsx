@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+﻿import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -49,7 +49,7 @@ const VendorDashboard = lazy(() =>
 const AdminPanel = lazy(() =>
   import('./pages/AdminPanel').then((m) => ({ default: m.AdminPanel }))
 );
-/* Trust Pack — five static pages share ONE lazy chunk */
+/* Trust Pack â€” five static pages share ONE lazy chunk */
 const AboutPage = lazy(() =>
   import('./pages/StaticPages').then((m) => ({ default: m.AboutPage }))
 );
@@ -72,7 +72,7 @@ const PageLoader: React.FC = () => (
     <div className="w-14 h-14 rounded-2xl overflow-hidden border border-slate-200 shadow animate-pulse">
       <img src={logo} alt="" className="w-full h-full object-contain" />
     </div>
-    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Loading…</p>
+    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Loadingâ€¦</p>
   </div>
 );
 
@@ -120,7 +120,6 @@ const routeFromLocation = (): RouteState => {
   } else if (first === 'shop') {
     page = 'shop-detail';
     if (second && !params.shopId) params.shopId = second;
-  } else if (first && KNOWN_PAGES.includes(first)) {
     page = first;
   }
   return { page, params };
@@ -171,7 +170,7 @@ const Router: React.FC = () => {
         const cats = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
         const catText = cats.length > 0 ? ` Browse ${cats.slice(0, 6).join(', ')} and more.` : '';
         setSeo({
-          title: 'All Products — Online Shopping in Bangladesh',
+          title: 'All Products â€” Online Shopping in Bangladesh',
           description: `Buy from verified Bangladeshi sellers with bKash/Nagad OTP or cash on delivery.${catText}`,
           path: '/products'
         });
@@ -181,7 +180,7 @@ const Router: React.FC = () => {
       case 'product-detail':
         if (product) {
           setSeo({
-            title: `${product.title} — Buy Online in Bangladesh`,
+            title: `${product.title} â€” Buy Online in Bangladesh`,
             description: (product.description || `Buy ${product.title} at the best price in Bangladesh.`).slice(0, 155),
             path: `/product/${product.id}`
           });
@@ -205,8 +204,8 @@ const Router: React.FC = () => {
       case 'shop-detail':
         if (shop) {
           setSeo({
-            title: `${shop.name} — Verified Seller`,
-            description: (shop.description || `Shop ${shop.name} on Showy — verified Bangladeshi seller with nationwide delivery.`).slice(0, 155),
+            title: `${shop.name} â€” Verified Seller`,
+            description: (shop.description || `Shop ${shop.name} on Showy â€” verified Bangladeshi seller with nationwide delivery.`).slice(0, 155),
             path: `/shop/${shop.id}`
           });
         }
@@ -215,7 +214,7 @@ const Router: React.FC = () => {
         setSeo({ title: 'Explore Vendor Shops', description: 'Discover verified independent shops selling on Showy marketplace.', path: '/shops' });
         break;
       case 'about':
-        setSeo({ title: 'About Us', description: "Showy is Bangladesh's multi-vendor marketplace — sellers keep 95% of every sale.", path: '/about' });
+        setSeo({ title: 'About Us', description: "Showy is Bangladesh's multi-vendor marketplace â€” sellers keep 95% of every sale.", path: '/about' });
         break;
       case 'contact':
         setSeo({ title: 'Contact Us', description: 'Reach the Showy support team by email or hotline.', path: '/contact' });
@@ -234,7 +233,7 @@ const Router: React.FC = () => {
         break;
       default:
         setSeo({
-          title: 'Showy Shop — Online Shopping Bangladesh | Multi-Vendor Marketplace',
+          title: 'Showy Shop â€” Online Shopping Bangladesh | Multi-Vendor Marketplace',
           description: 'Shop jerseys, fashion, gadgets & more from verified Bangladeshi sellers on Showy. bKash/Nagad OTP checkout, cash on delivery nationwide. Open your own shop in minutes.',
           path: '/'
         });
