@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard, Package, ShoppingCart, Wallet, Settings, Plus,
   TrendingUp, DollarSign, Boxes, Clock, Send, Store as StoreIcon,
-  BadgePercent, CheckCircle2, Loader2
+  BadgePercent, CheckCircle2, Loader2, AlertTriangle, Copy, Download, Truck
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { toast } from '../components/ui/Toast';
@@ -18,7 +18,7 @@ type Tab = 'overview' | 'products' | 'orders' | 'wallet' | 'settings';
 export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) => {
   const {
     currentUser, shops, products, orders,
-    updateProduct, deleteProduct, updateOrderStatus,
+    updateProduct, deleteProduct, updateOrderStatus, addProduct,
     vendorWallets, payoutRequests, requestPayout, updateShop
   } = useStore();
 
@@ -26,6 +26,10 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutMethod, setPayoutMethod] = useState<'bkash' | 'nagad' | 'bank'>('bkash');
   const [busyPayout, setBusyPayout] = useState(false);
+  const [orderFilter, setOrderFilter] = useState<'all' | 'processing' | 'shipped' | 'delivered'>('all');
+  const [consignmentMap, setConsignmentMap] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('showy_consignment') || '{}'); } catch { return {}; }
+  });
 
   const myShop = shops.find((s) => s.owner_id === currentUser?.id);
 
@@ -50,6 +54,33 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
 
   const totalSales = myProducts.reduce((sum, p) => sum + (p.discount_price ?? p.price), 0);
   const pendingOrders = myOrders.filter((o) => o.overall_status !== 'delivered').length;
+  const lowStock = myProducts.filter((p) => p.stock > 0 && p.stock <= 5);
+  const sales7d = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - 6 + i);
+    const key = d.toISOString().slice(0, 10);
+    const total = myOrders.filter((o) => o.created_at.slice(0, 10) === key).reduce((sum, o) => sum + o.items.filter((it) => it.shop_id === myShop.id).reduce((s, it) => s + it.vendor_amount_95pct, 0), 0);
+    return { key, label: d.toLocaleDateString('en-GB', { weekday: 'short' }), total };
+  });
+  const max7 = Math.max(1, ...sales7d.map((s) => s.total));
+
+  const exportProductsCsv = () => {
+    const rows = [['Title','Price','Discount','Stock','Active','Category']];
+    myProducts.forEach((p) => rows.push([p.title, String(p.price), String(p.discount_price ?? ''), String(p.stock), p.is_active ? 'yes' : 'no', p.category]));
+    const blob = new Blob([rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${myShop.slug}-products.csv`; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const duplicateProduct = async (p: any) => {
+    try {
+      await addProduct({ title: p.title + ' (Copy)', slug: p.slug + '-copy-' + Date.now(), description: p.description, category: p.category, subcategory: p.subcategory, tags: p.tags, price: p.price, discount_price: p.discount_price, stock: p.stock, images: p.images, is_featured: false, is_active: false, is_returnable: p.is_returnable, shop_id: p.shop_id } as any);
+      toast.success('Duplicated as hidden draft.');
+    } catch (e: any) { toast.error(e.message); }
+  };
+  const exportOrdersCsv = () => {
+    const rows = [['Order','Customer','Phone','Product','Qty','Total','You Receive','Status','Date']];
+    myOrders.forEach((o) => o.items.filter((i) => i.shop_id === myShop.id).forEach((it) => rows.push([o.order_number, o.customer_name, o.customer_phone, it.product_title + (it.variant_label ? ` (${it.variant_label})` : ''), String(it.quantity), String(it.total_price), String(it.vendor_amount_95pct), it.status, new Date(o.created_at).toLocaleDateString()])));
+    const blob = new Blob([rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${myShop.slug}-orders.csv`; a.click(); URL.revokeObjectURL(a.href);
+  };
 
   const TABS: { key: Tab; label: string; icon: any }[] = [
     { key: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -108,6 +139,39 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
             ))}
           </div>
 
+          {/* 7-day sales chart */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <h3 className="font-extrabold text-slate-900 text-sm mb-4">Sales — Last 7 Days (your 95%)</h3>
+            <div className="flex items-end gap-2 h-24">
+              {sales7d.map((d) => (
+                <div key={d.key} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-600">৳{d.total.toFixed(0)}</span>
+                  <div className="w-full bg-brand-100 rounded-t-lg transition" style={{ height: `${(d.total / max7) * 72 + 4}px` }}>
+                    <div className="w-full bg-brand-600 rounded-t-lg" style={{ height: '100%', opacity: d.total ? 0.85 : 0.15 }} />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400">{d.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Low-stock alerts */}
+          {lowStock.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-extrabold text-amber-800">Low stock — {lowStock.length} product{lowStock.length > 1 ? 's' : ''} running low</p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {lowStock.map((p) => (
+                    <button key={p.id} onClick={() => setTab('products')} className="px-2.5 py-1 bg-white border border-amber-200 rounded-full text-xs font-bold text-amber-700 hover:bg-amber-100">
+                      {p.title} — {p.stock} left
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Commission explainer */}
           <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white flex items-center gap-4 shadow-lg">
             <BadgePercent className="w-9 h-9 text-amber-300 shrink-0" />
@@ -123,6 +187,13 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
       {/* PRODUCTS */}
       {tab === 'products' && (
         <div className="space-y-4">
+          {myProducts.length > 0 && (
+            <div className="flex justify-end gap-2">
+              <button onClick={exportProductsCsv} className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Export CSV
+              </button>
+            </div>
+          )}
           {myProducts.length === 0 ? (
             <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-3">
               <Package className="w-10 h-10 text-slate-300 mx-auto" />
@@ -165,7 +236,8 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                       </td>
                       <td className="px-5 py-3 text-right">
                         <button onClick={() => onNavigate('upload-product', { productId: p.id })}
-                          className="text-brand-600 hover:text-brand-700 font-bold text-[11px] mr-3">Edit</button>
+                          className="text-brand-600 hover:text-brand-700 font-bold text-[11px] mr-2">Edit</button>
+                        <button onClick={() => duplicateProduct(p)} className="text-slate-600 hover:text-slate-800 font-bold text-[11px] mr-2 inline-flex items-center gap-1"><Copy className="w-3 h-3" />Duplicate</button>
                         <button onClick={async () => {
                             const ok = await confirmDialog({
                               title: 'Delete this product?',
@@ -192,14 +264,24 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
       {/* ORDERS */}
       {tab === 'orders' && (
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
+              {(['all','processing','shipped','delivered'] as const).map((f) => (
+                <button key={f} onClick={() => setOrderFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition ${orderFilter === f ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>{f}</button>
+              ))}
+            </div>
+            {myOrders.length > 0 && (
+              <button onClick={exportOrdersCsv} className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> Export CSV</button>
+            )}
+          </div>
           {myOrders.length === 0 ? (
             <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
               <ShoppingCart className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-500">No orders received yet</p>
             </div>
           ) : (
-            myOrders.map((order) =>
-              order.items.filter((i) => i.shop_id === myShop.id).map((item) => (
+            myOrders.filter((o) => orderFilter === 'all' || o.items.some((i) => i.shop_id === myShop.id && i.status === orderFilter)).map((order) =>
+              order.items.filter((i) => i.shop_id === myShop.id && (orderFilter === 'all' || i.status === orderFilter)).map((item) => (
                 <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
@@ -231,6 +313,11 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                         {st}
                       </button>
                     ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <input placeholder="Consignment / tracking ID (Pathao/Steadfast)" value={consignmentMap[item.id] || ''} onChange={(e) => { const v = e.target.value; setConsignmentMap((m) => { const n = { ...m, [item.id]: v }; localStorage.setItem('showy_consignment', JSON.stringify(n)); return n; }); }} className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap">saved locally</span>
                   </div>
                 </div>
               ))
