@@ -13,10 +13,18 @@ if ((!envUrl || !envKey) && existsSync('.env')) {
 }
 const url = envUrl;
 const key = envKey;
-if (!url || !key) { console.error('Missing VITE_SUPABASE_URL / KEY'); process.exit(1); }
-const supabase = createClient(url, key);
-const { data: products } = await supabase.from('products').select('id,title,description,price,discount_price,images,category,is_active').eq('is_active', true).limit(200);
-if (!products) { console.error('No products'); process.exit(0); }
+let products = [];
+if (!url || !key) {
+  console.warn('Missing VITE_SUPABASE_URL / KEY — generating empty merchant feed');
+} else {
+  try {
+    const supabase = createClient(url, key);
+    const { data, error } = await supabase.from('products').select('id,title,description,price,discount_price,images,category,is_active').eq('is_active', true).limit(200);
+    if (error) console.warn('Feed fetch error:', error.message);
+    else if (data) products = data;
+  } catch (e) { console.warn('Feed exception:', e.message); }
+}
+if (!products) products = [];
 const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const items = products.map((p) => {
   const link = `https://showy.jubair.bond/product/${p.id}`;
