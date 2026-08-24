@@ -35,7 +35,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
     note: ''
   });
 
-  const shippingFee = shippingMethod === 'express' ? 150 : cartTotal > 5000 ? 0 : 80;
+  const zoneInside = Number(localStorage.getItem('showy_delivery_inside') || '60');
+  const zoneOutside = Number(localStorage.getItem('showy_delivery_outside') || '120');
+  const isDhaka = form.city.trim().toLowerCase().includes('dhaka');
+  const zoneFee = isDhaka ? zoneInside : zoneOutside;
+  const shippingFee = shippingMethod === 'express' ? 150 : cartTotal > 5000 ? 0 : zoneFee;
   const grandTotal = Math.max(0, cartTotal - couponDiscount) + shippingFee;
 
   const handleApplyCoupon = async () => {
@@ -220,8 +224,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
               <button onClick={() => setShippingMethod('standard')}
                 className={`p-4 rounded-xl border-2 text-left transition ${shippingMethod === 'standard' ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}>
                 <p className="font-extrabold text-sm text-slate-800">Standard</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">3–5 business days</p>
-                <p className="font-extrabold text-sm text-brand-700 mt-1">{cartTotal > 5000 ? 'FREE' : '৳80'}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">3–5 business days {form.city ? (isDhaka ? '· Dhaka' : '· Outside Dhaka') : ''}</p>
+                <p className="font-extrabold text-sm text-brand-700 mt-1">{cartTotal > 5000 ? 'FREE' : `৳${zoneFee}`}</p>
               </button>
               <button onClick={() => setShippingMethod('express')}
                 className={`p-4 rounded-xl border-2 text-left transition ${shippingMethod === 'express' ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}>

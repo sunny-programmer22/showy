@@ -1,6 +1,7 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { SearchX, PackageSearch } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { supabase } from '../lib/supabase';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { ProductCard } from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
@@ -18,9 +19,19 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onN
   const {
     products, searchQuery, setSearchQuery,
     selectedCategory, selectedShopId, priceRange, isLoading,
-    inStockOnly, minRating, sortBy, setSortBy
-  } = useStore();
+    inStockOnly, minRating, sortBy, setSortBy, isLiveMode
+  } = useStore() as any;
   const dataLoading = isLoading && products.length === 0;
+  const [serverHits, setServerHits] = useState<Product[] | null>(null);
+  useEffect(() => {
+    if (!isLiveMode || !supabase || searchQuery.trim().length < 2) { setServerHits(null); return; }
+    const t = setTimeout(async () => {
+      const { data, error } = await (supabase!.rpc as any)('search_products', { q: searchQuery });
+      if (!error && data && data.length) setServerHits(data as Product[]);
+      else setServerHits(null);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, isLiveMode]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -37,15 +48,15 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onN
   }, [selectedCategory, selectedShopId, priceRange, searchQuery, inStockOnly, minRating, sortBy]);
 
   const filtered = useMemo(() => {
-    let list = [...products];
+    let list = serverHits ? [...serverHits] : [...products];
 
-    // Search filter (title, tags, category)
-    if (searchQuery.trim()) {
+    // Search filter (title, tags, category) — skipped when server search active
+    if (!serverHits && searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((p) =>
         p.title.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q))
+        p.tags.some((t: string) => t.toLowerCase().includes(q))
       );
     }
 
@@ -71,7 +82,7 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onN
     }
 
     return list.filter((p) => p.is_active);
-  }, [products, searchQuery, selectedCategory, selectedShopId, priceRange, sortBy, inStockOnly, minRating]);
+  }, [products, serverHits, searchQuery, selectedCategory, selectedShopId, priceRange, sortBy, inStockOnly, minRating]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

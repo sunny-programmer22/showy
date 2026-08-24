@@ -2,8 +2,9 @@
 import {
   ShieldAlert, TrendingUp, Percent, Store as StoreIcon, Users,
   Package, Wallet, CheckCircle2, XCircle, BadgePercent,
-  TicketPercent, ScrollText, Plus, Trash2, Power, ImagePlus, Upload
+  TicketPercent, ScrollText, Plus, Trash2, Power, ImagePlus, Upload, Star
 } from 'lucide-react';
+import { INITIAL_CATEGORIES } from '../data/mockData';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../lib/supabase';
 import { toast } from '../components/ui/Toast';
@@ -15,12 +16,12 @@ interface AdminPanelProps {
   onNavigate: (page: string) => void;
 }
 
-  type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'transactions' | 'banners' | 'coupons' | 'security';
+  type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'transactions' | 'banners' | 'manual-orders' | 'users' | 'curate' | 'coupons' | 'security';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
   const {
     shops, products, orders, users,
-    platformAdminEarnings, toggleShopActive, payoutRequests, approvePayout, rejectPayout, verifyOrderPayment,
+    platformAdminEarnings, toggleShopActive, payoutRequests, approvePayout, rejectPayout, verifyOrderPayment, updateProduct,
     isLiveMode
   } = useStore();
 
@@ -142,6 +143,76 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
     else { setAdminBanners((prev) => [...prev, data]); setBannerForm({ headline: '', sub: '', link: '', image_url: '', sort: '0' }); toast.success('Banner added'); }
   };
 
+  const [manualCustomer, setManualCustomer] = useState({ fullName: '', phone: '', email: '', address: '', city: '' });
+  const [manualItems, setManualItems] = useState<{ product: any; qty: number }[]>([]);
+  const [manualPayment, setManualPayment] = useState<'cod' | 'bkash' | 'nagad'>('cod');
+  const [manualPick, setManualPick] = useState('');
+  const [creatingManual, setCreatingManual] = useState(false);
+  const manualTotal = manualItems.reduce((s, it) => s + (it.product.discount_price ?? it.product.price) * it.qty, 0);
+  const handleManualAdd = () => {
+    const p = products.find((x) => x.id === manualPick);
+    if (!p) return;
+    setManualItems((prev) => {
+      const ex = prev.find((it) => it.product.id === p.id);
+      if (ex) return prev.map((it) => (it.product.id === p.id ? { ...it, qty: it.qty + 1 } : it));
+      return [...prev, { product: p, qty: 1 }];
+    });
+    setManualPick('');
+  };
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualCustomer.fullName || !manualCustomer.phone || manualItems.length === 0) { toast.error('Customer name, phone and at least one product required'); return; }
+    setCreatingManual(true);
+    try {
+      if (isLiveMode && supabase) {
+        const orderNumber = `ORD-MANUAL-${Date.now().toString().slice(-6)}`;
+        const shipping = { fullName: manualCustomer.fullName, phone: manualCustomer.phone, email: manualCustomer.email || `${manualCustomer.phone}@manual.local`, address: manualCustomer.address || 'Manual order', city: manualCustomer.city || 'Dhaka', postalCode: '', note: 'Manual order by admin' };
+        const { data: order, error } = await (supabase.from('orders').insert as any)({
+          order_number: orderNumber,
+          customer_id: users[0]?.id || shops[0]?.owner_id,
+          customer_name: manualCustomer.fullName,
+          customer_email: shipping.email,
+          customer_phone: manualCustomer.phone,
+          shipping_address: shipping,
+          total_amount: manualTotal,
+          platform_fee_total: manualTotal * 0.05,
+          payment_method: manualPayment,
+          payment_status: manualPayment === 'cod' ? 'pending' : 'paid',
+          transaction_id: `MANUAL-${Date.now()}`,
+          overall_status: 'processing',
+        }).select().single();
+        if (error) throw error;
+        for (const it of manualItems) {
+          const unit = it.product.discount_price ?? it.product.price;
+          await (supabase.from('order_items').insert as any)({
+            order_id: order.id,
+            shop_id: it.product.shop_id,
+            product_id: it.product.id,
+            product_title: it.product.title,
+            product_image: it.product.images?.[0] || '',
+            unit_price: unit,
+            quantity: it.qty,
+            total_price: unit * it.qty,
+            is_admin_shop: shops.find((s) => s.id === it.product.shop_id)?.is_admin_shop ?? false,
+            admin_commission_5pct: unit * it.qty * 0.05,
+            vendor_amount_95pct: unit * it.qty * 0.95,
+            status: 'processing',
+            shop_name: shops.find((s) => s.id === it.product.shop_id)?.name || 'Vendor',
+          });
+        }
+        toast.success(`Manual order ${orderNumber} created`);
+      } else {
+        toast.success(`Manual order created (demo) — ${manualCustomer.fullName} · ৳${manualTotal}`);
+      }
+      setManualItems([]); setManualCustomer({ fullName: '', phone: '', email: '', address: '', city: '' });
+    } catch (err: any) { toast.error(err.message); } finally { setCreatingManual(false); }
+  };
+
+  const [curateCategoryInput, setCurateCategoryInput] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('showy_custom_cats') || '[]'); } catch { return []; } });
+  const [deliveryInside, setDeliveryInside] = useState(() => localStorage.getItem('showy_delivery_inside') || '60');
+  const [deliveryOutside, setDeliveryOutside] = useState(() => localStorage.getItem('showy_delivery_outside') || '120');
+
   const TABS: { key: Tab; label: string; icon: any }[] = [
     { key: 'overview', label: 'Platform Overview', icon: TrendingUp },
     { key: 'shops', label: 'Shop Management', icon: StoreIcon },
@@ -149,6 +220,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
 { key: 'payouts', label: 'Vendor Payouts', icon: Wallet },
 { key: 'transactions', label: 'Transactions', icon: ScrollText },
 { key: 'banners', label: 'Hero Banners', icon: ImagePlus },
+{ key: 'manual-orders', label: 'Manual Orders', icon: Plus },
+{ key: 'users', label: 'Users', icon: Users },
+{ key: 'curate', label: 'Curate', icon: BadgePercent },
 { key: 'coupons', label: 'Coupons & Promos', icon: TicketPercent },
     { key: 'security', label: 'Security Log', icon: ScrollText }
   ];
@@ -416,12 +490,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                   }`}>{order.payment_status}</span>
                 )}
               </div>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-1">
                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                   order.overall_status === 'delivered' ? 'bg-emerald-100 text-emerald-700'
                   : order.overall_status === 'shipped' ? 'bg-indigo-100 text-indigo-700'
                   : 'bg-amber-100 text-amber-700'
                 }`}>{order.overall_status}</span>
+                {order.payment_status === 'paid' && (
+                  <button onClick={async () => {
+                    const ok = await confirmDialog({ title: 'Refund this order?', message: `Refund ৳${order.total_amount.toLocaleString()} to ${order.customer_name}?`, confirmText: 'Refund', danger: true });
+                    if (!ok || !supabase) return;
+                    const { error } = await (supabase.from('orders').update as any)({ payment_status: 'failed', overall_status: 'cancelled' }).eq('id', order.id);
+                    if (error) toast.error(error.message); else toast.success('Order refunded — ledger updated');
+                  }} className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[10px] font-bold">Refund</button>
+                )}
               </div>
             </div>
           ))}
@@ -580,6 +662,132 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* MANUAL ORDERS */}
+      {tab === 'manual-orders' && (
+        <div className="space-y-5">
+          <form onSubmit={handleManualSubmit} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
+            <h3 className="font-extrabold text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-brand-600" /> Create Phone/WhatsApp Order</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={manualCustomer.fullName} onChange={(e) => setManualCustomer({ ...manualCustomer, fullName: e.target.value })} placeholder="Customer name *" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={manualCustomer.phone} onChange={(e) => setManualCustomer({ ...manualCustomer, phone: e.target.value })} placeholder="Phone *" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={manualCustomer.email} onChange={(e) => setManualCustomer({ ...manualCustomer, email: e.target.value })} placeholder="Email (optional)" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={manualCustomer.city} onChange={(e) => setManualCustomer({ ...manualCustomer, city: e.target.value })} placeholder="City" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={manualCustomer.address} onChange={(e) => setManualCustomer({ ...manualCustomer, address: e.target.value })} placeholder="Address" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm col-span-2" />
+            </div>
+            <div className="flex gap-2">
+              <select value={manualPick} onChange={(e) => setManualPick(e.target.value)} className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm">
+                <option value="">Pick product</option>
+                {products.filter((p) => p.is_active).slice(0, 100).map((p) => <option key={p.id} value={p.id}>{p.title} — ৳{p.discount_price ?? p.price} ({p.stock} in stock)</option>)}
+              </select>
+              <button type="button" onClick={handleManualAdd} className="px-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold">Add</button>
+            </div>
+            {manualItems.length > 0 && (
+              <div className="space-y-2">
+                {manualItems.map((it) => (
+                  <div key={it.product.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border">
+                    <img src={it.product.images?.[0]} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                    <span className="flex-1 text-sm font-bold truncate">{it.product.title}</span>
+                    <input type="number" min={1} value={it.qty} onChange={(e) => setManualItems((prev) => prev.map((x) => x.product.id === it.product.id ? { ...x, qty: Math.max(1, Number(e.target.value)) } : x))} className="w-16 px-2 py-1 border rounded-lg text-sm text-center" />
+                    <span className="text-sm font-bold">৳{((it.product.discount_price ?? it.product.price) * it.qty).toLocaleString()}</span>
+                    <button type="button" onClick={() => setManualItems((prev) => prev.filter((x) => x.product.id !== it.product.id))} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                ))}
+                <p className="text-right font-extrabold">Total: ৳{manualTotal.toLocaleString()}</p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <select value={manualPayment} onChange={(e) => setManualPayment(e.target.value as any)} className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm">
+                <option value="cod">Cash on Delivery</option><option value="bkash">bKash (paid)</option><option value="nagad">Nagad (paid)</option>
+              </select>
+              <button type="submit" disabled={creatingManual} className="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold text-sm rounded-xl">{creatingManual ? 'Creating…' : 'Create Order'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* USERS */}
+      {tab === 'users' && (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="p-4 border-b flex items-center justify-between"><h3 className="font-bold text-sm">Registered Users ({users.length})</h3><span className="text-xs text-slate-400">Ban prevents ordering</span></div>
+          <table className="w-full text-xs">
+            <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500"><tr><th className="text-left px-4 py-3">User</th><th className="text-left px-4 py-3">Role</th><th className="text-left px-4 py-3">Status</th><th className="text-right px-4 py-3">Action</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.map((u: any) => (
+                <tr key={u.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3"><p className="font-bold text-slate-800">{u.full_name || '—'}</p><p className="text-[10px] text-slate-400">{u.email}</p></td>
+                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : u.role === 'vendor' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{u.role}</span></td>
+                  <td className="px-4 py-3">{(u as any).is_banned ? <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full text-[10px] font-bold">Banned</span> : <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold">Active</span>}</td>
+                  <td className="px-4 py-3 text-right">
+                    {u.role !== 'admin' && (
+                      <button onClick={async () => {
+                        const isBanned = (u as any).is_banned;
+                        const ok = await confirmDialog({ title: isBanned ? 'Unban user?' : 'Ban user?', message: isBanned ? `${u.email} will be able to order again.` : `${u.email} will be blocked from ordering.`, confirmText: isBanned ? 'Unban' : 'Ban', danger: !isBanned });
+                        if (!ok || !supabase) return;
+                        const { error } = await (supabase.from('profiles').update as any)({ is_banned: !isBanned }).eq('id', u.id);
+                        if (error) toast.error(error.message); else { toast.success(isBanned ? 'User unbanned' : 'User banned'); (u as any).is_banned = !isBanned; setTab('users'); setTimeout(() => setTab('users'), 10); }
+                      }} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${ (u as any).is_banned ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}>{(u as any).is_banned ? 'Unban' : 'Ban'}</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* CURATE */}
+      {tab === 'curate' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+            <h3 className="font-extrabold text-sm flex items-center gap-2"><Star className="w-4 h-4 text-amber-500" /> Featured Products (homepage)</h3>
+            <p className="text-xs text-slate-500">Toggle which products appear in the Featured section on the homepage.</p>
+            <div className="space-y-2 max-h-[320px] overflow-y-auto">
+              {products.slice(0, 50).map((p) => (
+                <div key={p.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-200">
+                  <img src={p.images?.[0]} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                  <span className="flex-1 text-sm font-bold truncate">{p.title}</span>
+                  <button onClick={async () => {
+                    const next = !p.is_featured;
+                    try { await updateProduct(p.id, { is_featured: next } as any); toast.success(next ? 'Featured' : 'Unfeatured'); } catch (e: any) { toast.error(e.message); }
+                  }} className={`px-3 py-1.5 rounded-full text-xs font-bold ${p.is_featured ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{p.is_featured ? 'Featured' : 'Not featured'}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+            <h3 className="font-extrabold text-sm">Categories</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {[...INITIAL_CATEGORIES.map((c) => c.slug), ...customCategories].map((cat) => (
+                <span key={cat} className="px-2.5 py-1 bg-slate-100 rounded-full text-xs font-bold flex items-center gap-1">
+                  {cat}
+                  {customCategories.includes(cat) && (
+                    <button onClick={() => { const next = customCategories.filter((cc) => cc !== cat); setCustomCategories(next); localStorage.setItem('showy_custom_cats', JSON.stringify(next)); }} className="ml-1 text-rose-500 hover:text-rose-700">×</button>
+                  )}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input value={curateCategoryInput} onChange={(e) => setCurateCategoryInput(e.target.value)} placeholder="New category slug (e.g. toys)" className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+              <button onClick={() => {
+                const v = curateCategoryInput.trim().toLowerCase().replace(/\s+/g, '-');
+                if (!v) return;
+                if ([...INITIAL_CATEGORIES.map((c) => c.slug), ...customCategories].includes(v)) { toast.error('Already exists'); return; }
+                const next = [...customCategories, v]; setCustomCategories(next); localStorage.setItem('showy_custom_cats', JSON.stringify(next)); setCurateCategoryInput(''); toast.success(`Category ${v} added`);
+              }} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">Add</button>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+            <h3 className="font-extrabold text-sm">Delivery by Zone</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs font-bold text-slate-600">Inside Dhaka (৳)</label><input type="number" value={deliveryInside} onChange={(e) => setDeliveryInside(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-xl text-sm" /></div>
+              <div><label className="text-xs font-bold text-slate-600">Outside Dhaka (৳)</label><input type="number" value={deliveryOutside} onChange={(e) => setDeliveryOutside(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-xl text-sm" /></div>
+            </div>
+            <button onClick={() => { localStorage.setItem('showy_delivery_inside', deliveryInside); localStorage.setItem('showy_delivery_outside', deliveryOutside); toast.success('Delivery fees saved'); }} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">Save Fees</button>
+            <p className="text-[11px] text-slate-400">Applied at checkout based on city — Dhaka vs outside.</p>
+          </div>
         </div>
       )}
 

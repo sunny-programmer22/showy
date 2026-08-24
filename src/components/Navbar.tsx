@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { Product } from '../types';
 import {
   ShoppingBag,
   Search,
@@ -36,8 +38,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
     searchQuery,
     setSearchQuery,
     shops,
-    setAuthModalOpen
-  } = useStore();
+    setAuthModalOpen,
+    isLiveMode
+  } = useStore() as any;
   const { lang, toggleLang, t } = useLang();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,12 +48,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
   const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   // Check if current user already owns a shop
-  const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
+  const userShop = currentUser ? shops.find((s: any) => s.owner_id === currentUser.id) : null;
 
   const q = searchQuery.trim().toLowerCase();
-  const autoProducts = q.length >= 2 ? products.filter((p) => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 5) : [];
-  const autoShops = q.length >= 2 ? shops.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 3) : [];
-  const hasAutocomplete = showAutocomplete && q.length >= 2 && (autoProducts.length > 0 || autoShops.length > 0);
+  const [serverAuto, setServerAuto] = useState<Product[] | null>(null);
+  useEffect(() => {
+    if (!isLiveMode || !supabase || q.length < 2) { setServerAuto(null); return; }
+    const t = setTimeout(async () => {
+      const { data } = await (supabase!.rpc as any)('search_products', { q });
+      if (data && data.length) setServerAuto(data as Product[]);
+      else setServerAuto(null);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, isLiveMode]);
+  const autoProducts = q.length >= 2 ? products.filter((p: Product) => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 5) : [];
+  const autoShops = q.length >= 2 ? shops.filter((s: any) => s.name.toLowerCase().includes(q)).slice(0, 3) : [];
+  const displayProducts = serverAuto ?? autoProducts;
+  const hasAutocomplete = showAutocomplete && q.length >= 2 && (displayProducts.length > 0 || autoShops.length > 0);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,10 +122,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             </button>
             {hasAutocomplete && (
               <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-lift overflow-hidden z-50 max-h-[360px] overflow-y-auto">
-                {autoProducts.length > 0 && (
+                {displayProducts.length > 0 && (
                   <div className="p-2">
                     <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1">Products</p>
-                    {autoProducts.map((p) => (
+                    {displayProducts.map((p: any) => (
                       <button key={p.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onNavigate('product-detail', { product: p }); setShowAutocomplete(false); }}
                         className="w-full text-left flex items-center gap-3 px-2 py-2 hover:bg-slate-50 rounded-xl transition">
                         <img src={p.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
@@ -126,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
                 {autoShops.length > 0 && (
                   <div className="p-2 border-t border-slate-100">
                     <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1">Shops</p>
-                    {autoShops.map((s) => (
+                    {autoShops.map((s: any) => (
                       <button key={s.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onNavigate('shop-detail', { shopId: s.id }); setShowAutocomplete(false); }}
                         className="w-full text-left flex items-center gap-2 px-2 py-2 hover:bg-emerald-50 rounded-xl transition">
                         <img src={s.logo_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
@@ -333,15 +347,44 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="lg:hidden glass border-b border-slate-200/60 px-4 pt-2 pb-4 space-y-3 text-sm animate-fade-up shadow-soft">
-          <form onSubmit={handleSearchSubmit} className="relative">
+          <form onSubmit={handleSearchSubmit} className="relative" onBlur={() => setTimeout(() => setShowAutocomplete(false), 180)}>
             <input
               type="text"
               placeholder="Search products or shops..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-100 text-sm rounded-lg"
+              onFocus={() => setShowAutocomplete(true)}
+              onChange={(e) => { setSearchQuery(e.target.value); setShowAutocomplete(true); }}
+              className="w-full pl-9 pr-4 py-2 bg-slate-100 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            {hasAutocomplete && (
+              <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-lift overflow-hidden z-50 max-h-[320px] overflow-y-auto">
+                {displayProducts.length > 0 && (
+                  <div className="p-2">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1">Products</p>
+                    {displayProducts.map((p: any) => (
+                      <button key={p.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onNavigate('product-detail', { product: p }); setShowAutocomplete(false); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left flex items-center gap-3 px-2 py-2 hover:bg-slate-50 rounded-xl">
+                        <img src={p.images[0]} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                        <span className="text-sm font-bold text-slate-800 truncate">{p.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {autoShops.length > 0 && (
+                  <div className="p-2 border-t border-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1">Shops</p>
+                    {autoShops.map((s: any) => (
+                      <button key={s.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onNavigate('shop-detail', { shopId: s.id }); setShowAutocomplete(false); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left flex items-center gap-2 px-2 py-2 hover:bg-emerald-50 rounded-xl">
+                        <img src={s.logo_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                        <span className="text-sm font-bold text-slate-700 truncate">{s.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </form>
 
           <div className="flex flex-col space-y-2 pt-2 border-t border-slate-100 font-medium">

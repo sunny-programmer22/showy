@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Package, ShoppingCart, Wallet, Settings, Plus,
   TrendingUp, DollarSign, Boxes, Clock, Send, Store as StoreIcon,
@@ -8,12 +8,13 @@ import { useStore } from '../context/StoreContext';
 import { toast } from '../components/ui/Toast';
 import { VariantChip } from '../components/ui/VariantChip';
 import { confirmDialog } from '../components/ui/ConfirmDialog';
+import * as api from '../lib/api';
 
 interface VendorDashboardProps {
   onNavigate: (page: string, extra?: any) => void;
 }
 
-type Tab = 'overview' | 'products' | 'orders' | 'wallet' | 'settings';
+type Tab = 'overview' | 'products' | 'orders' | 'wallet' | 'coupons' | 'settings';
 
 export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) => {
   const {
@@ -30,6 +31,14 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
   const [consignmentMap, setConsignmentMap] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('showy_consignment') || '{}'); } catch { return {}; }
   });
+  const [vendorCoupons, setVendorCoupons] = useState<any[]>([]);
+  const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percent' as 'percent' | 'fixed', value: '', min_amount: '' });
+  const [creatingCoupon, setCreatingCoupon] = useState(false);
+  useEffect(() => {
+    if (tab === 'coupons') {
+      api.fetchCoupons().then(setVendorCoupons).catch(() => {});
+    }
+  }, [tab]);
 
   const myShop = shops.find((s) => s.owner_id === currentUser?.id);
 
@@ -87,6 +96,7 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
     { key: 'products', label: 'My Products', icon: Package },
     { key: 'orders', label: 'Orders', icon: ShoppingCart },
     { key: 'wallet', label: 'Earnings & Payout', icon: Wallet },
+    { key: 'coupons', label: 'My Coupons', icon: BadgePercent },
     { key: 'settings', label: 'Shop Settings', icon: Settings }
   ];
 
@@ -393,6 +403,53 @@ export const VendorDashboard: React.FC<VendorDashboardProps> = ({ onNavigate }) 
                       : 'bg-slate-100 text-slate-500'}`}>
                       {pr.status === 'transferred' && <CheckCircle2 className="inline w-3 h-3 mr-0.5" />}{pr.status}
                     </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* COUPONS */}
+      {tab === 'coupons' && (
+        <div className="space-y-4 max-w-2xl">
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!couponForm.code || !couponForm.value) { toast.error('Code and value required'); return; }
+            setCreatingCoupon(true);
+            try {
+              const created = await api.apiInsertCoupon({
+                code: couponForm.code,
+                discount_type: couponForm.discount_type,
+                discount_value: Number(couponForm.value),
+                min_order_amount: couponForm.min_amount ? Number(couponForm.min_amount) : 0,
+              } as any);
+              setVendorCoupons((prev) => [created, ...prev]);
+              setCouponForm({ code: '', discount_type: 'percent', value: '', min_amount: '' });
+              toast.success(`Coupon ${created.code} created`);
+            } catch (err: any) { toast.error(err.message); } finally { setCreatingCoupon(false); }
+          }} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
+            <h3 className="font-extrabold text-sm flex items-center gap-2"><BadgePercent className="w-4 h-4 text-brand-600" /> Create Coupon for My Shop</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={couponForm.code} onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })} placeholder="CODE" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-bold uppercase" />
+              <select value={couponForm.discount_type} onChange={(e) => setCouponForm({ ...couponForm, discount_type: e.target.value as any })} className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm">
+                <option value="percent">% off</option><option value="fixed">৳ fixed</option>
+              </select>
+              <input type="number" value={couponForm.value} onChange={(e) => setCouponForm({ ...couponForm, value: e.target.value })} placeholder={couponForm.discount_type === 'percent' ? '% value' : '৳ value'} className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input type="number" value={couponForm.min_amount} onChange={(e) => setCouponForm({ ...couponForm, min_amount: e.target.value })} placeholder="Min order ৳" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+            </div>
+            <button type="submit" disabled={creatingCoupon} className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold text-sm rounded-xl">{creatingCoupon ? 'Creating…' : 'Create Coupon'}</button>
+            <p className="text-[11px] text-slate-400">Coupons you create are usable store-wide. Manage globally in Admin → Coupons.</p>
+          </form>
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-4 border-b"><h4 className="font-bold text-sm">Your coupons ({vendorCoupons.length})</h4></div>
+            {vendorCoupons.length === 0 ? <p className="p-8 text-center text-sm text-slate-400">No coupons yet</p> : (
+              <div className="divide-y divide-slate-100">
+                {vendorCoupons.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between p-4 text-sm">
+                    <div><p className="font-mono font-bold">{c.code}</p><p className="text-xs text-slate-500">{c.discount_type === 'percent' ? `${c.discount_value}%` : `৳${c.discount_value}`} off · min ৳{c.min_order_amount}</p></div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{c.is_active ? 'Active' : 'Off'}</span>
                   </div>
                 ))}
               </div>

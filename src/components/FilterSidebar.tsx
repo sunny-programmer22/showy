@@ -19,6 +19,7 @@ export const FilterSidebar: React.FC = () => {
     setMinRating,
     setSortBy
   } = useStore();
+  const customCats: string[] = (() => { try { return JSON.parse(localStorage.getItem('showy_custom_cats') || '[]'); } catch { return []; } })();
 
   const handleResetFilters = () => {
     setSelectedCategory('all');
@@ -74,6 +75,19 @@ export const FilterSidebar: React.FC = () => {
               }`}
             >
               {cat.name}
+            </button>
+          ))}
+          {customCats.map((slug) => (
+            <button
+              key={slug}
+              onClick={() => setSelectedCategory(slug)}
+              className={`w-full text-left px-3 py-2 rounded-lg font-medium transition capitalize ${
+                selectedCategory === slug
+                  ? 'bg-brand-50 text-brand-700 font-bold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {slug}
             </button>
           ))}
         </div>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Star, ShoppingCart, ArrowLeft, Store, ShieldCheck, Minus, Plus, Truck, RefreshCw, BadgePercent, Ban } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, Store, ShieldCheck, Minus, Plus, Truck, RefreshCw, BadgePercent, Ban, Heart, MessageCircle, Users, HelpCircle, ImagePlus, ThumbsUp } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLang } from '../lib/i18n';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types';
 import * as api from '../lib/api';
 import type { ProductReview } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { trackViewContent, trackAddToCart } from '../lib/pixel';
 import { toast } from '../components/ui/Toast';
 
@@ -73,6 +74,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [myComment, setMyComment] = useState('');
   const [savingReview, setSavingReview] = useState(false);
   const myReview = currentUser ? reviews.find((r) => r.user_id === currentUser.id) : undefined;
+  const [followed, setFollowed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('showy_followed') || '[]').includes(shop?.id); } catch { return false; }
+  });
+  const [qaList, setQaList] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`showy_qa_${product.id}`) || '[]'); } catch { return []; }
+  });
+  const [qaQuestion, setQaQuestion] = useState('');
+  const [helpfulMap, setHelpfulMap] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(localStorage.getItem('showy_helpful') || '{}'); } catch { return {}; }
+  });
+  const [reviewImageUrl, setReviewImageUrl] = useState('');
+  const [reviewImageUploading, setReviewImageUploading] = useState(false);
 
   useEffect(() => {
     if (!isLiveMode) return;
@@ -97,6 +110,41 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     } finally {
       setSavingReview(false);
     }
+  };
+  const toggleFollow = () => {
+    if (!shop) return;
+    const list: string[] = JSON.parse(localStorage.getItem('showy_followed') || '[]');
+    const is = list.includes(shop.id);
+    const next = is ? list.filter((id) => id !== shop.id) : [...list, shop.id];
+    localStorage.setItem('showy_followed', JSON.stringify(next));
+    setFollowed(!is);
+    toast.success(is ? `Unfollowed ${shop.name}` : `Following ${shop.name} — you'll be notified of new products`);
+  };
+  const submitQuestion = () => {
+    if (!qaQuestion.trim()) return;
+    const entry = { id: Date.now().toString(), question: qaQuestion.trim(), answer: '', created_at: new Date().toISOString(), user_name: currentUser?.full_name || 'Guest' };
+    const next = [entry, ...qaList];
+    setQaList(next);
+    localStorage.setItem(`showy_qa_${product.id}`, JSON.stringify(next));
+    setQaQuestion('');
+    toast.success('Question submitted — seller will answer soon');
+  };
+  const toggleHelpful = (reviewId: string) => {
+    const cur = helpfulMap[reviewId] || 0;
+    const next = { ...helpfulMap, [reviewId]: cur ? 0 : 1 };
+    setHelpfulMap(next);
+    localStorage.setItem('showy_helpful', JSON.stringify(next));
+  };
+  const handleReviewImage = async (file: File) => {
+    if (!supabase) { toast.error('Storage not configured'); return; }
+    setReviewImageUploading(true);
+    const path = `reviews/${product.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from('media').upload(path, file);
+    if (error) { toast.error(error.message); setReviewImageUploading(false); return; }
+    const { data } = supabase.storage.from('media').getPublicUrl(path);
+    setReviewImageUrl(data.publicUrl);
+    setReviewImageUploading(false);
+    toast.success('Photo uploaded — will attach to review');
   };
 
   const effectivePrice = selectedVariant?.price ?? finalPrice;
@@ -156,13 +204,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         <div className="space-y-5">
           {/* Shop link */}
           {shop && (
-            <button onClick={() => onNavigateToShop(shop.id)}
-              className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-brand-600 transition bg-white border border-slate-200 rounded-full px-3 py-1.5 w-fit shadow-sm">
-              <Store className="w-3.5 h-3.5 text-brand-600" />
-              <span>Visit {shop.name}</span>
-              {shop.is_admin_shop && <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />}
-              {shop.is_verified && !shop.is_admin_shop && <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />}
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => onNavigateToShop(shop.id)}
+                className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-brand-600 transition bg-white border border-slate-200 rounded-full px-3 py-1.5 w-fit shadow-sm">
+                <Store className="w-3.5 h-3.5 text-brand-600" />
+                <span>Visit {shop.name}</span>
+                {shop.is_admin_shop && <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />}
+                {shop.is_verified && !shop.is_admin_shop && <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />}
+              </button>
+              <button onClick={toggleFollow} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 ${followed ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+                <Users className="w-3 h-3" /> {followed ? t('followingShop') : t('followShop')}
+              </button>
+            </div>
           )}
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 leading-snug">{product.title}</h1>
@@ -338,6 +391,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <textarea rows={3} value={myComment} onChange={(e) => setMyComment(e.target.value)}
               placeholder={myReview?.comment || 'Share your experience with this product…'}
               className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <div className="flex items-center gap-2">
+              <label className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                <ImagePlus className="w-3.5 h-3.5" /> {reviewImageUploading ? 'Uploading…' : 'Add photo'}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleReviewImage(e.target.files[0])} />
+              </label>
+              {reviewImageUrl && <img src={reviewImageUrl} alt="" className="w-12 h-12 rounded-lg object-cover border" />}
+            </div>
             <button onClick={submitReview} disabled={savingReview}
               className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition">
               {savingReview ? 'Saving…' : myReview ? 'Update Review' : 'Submit Review'}
@@ -369,12 +429,39 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   ))}
                 </div>
                 {r.comment && <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{r.comment}</p>}
+                <div className="flex items-center gap-2 mt-2">
+                  <button onClick={() => toggleHelpful(r.id)} className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${helpfulMap[r.id] ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                    <ThumbsUp className="w-3 h-3" /> {t('helpful')} {helpfulMap[r.id] ? '· 1' : ''}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         ) : (
           isLiveMode && <p className="text-xs text-slate-400">No reviews yet — be the first to review this product.</p>
         )}
+      </section>
+
+      {/* Q&A */}
+      <section className="mt-12 max-w-3xl">
+        <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2"><HelpCircle className="w-5 h-5 text-brand-600" /> {t('qaTitle')}</h2>
+        <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+          <div className="flex gap-2">
+            <input value={qaQuestion} onChange={(e) => setQaQuestion(e.target.value)} placeholder={t('askQuestion')} className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <button onClick={submitQuestion} className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold">Ask</button>
+          </div>
+          {qaList.length === 0 ? <p className="text-xs text-slate-400">No questions yet — be the first to ask about this product.</p> : (
+            <div className="space-y-3">
+              {qaList.map((q) => (
+                <div key={q.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5 text-slate-400" />{q.question}</p>
+                  <p className="text-xs text-slate-500 mt-1">— {q.user_name} · {new Date(q.created_at).toLocaleDateString()}</p>
+                  {q.answer ? <p className="mt-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl p-2">Seller: {q.answer}</p> : <p className="mt-1 text-xs text-slate-400">Awaiting seller answer…</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Related Products */}

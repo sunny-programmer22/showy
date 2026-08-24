@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Star, ShoppingCart, Eye, Store, ShieldCheck, Heart } from 'lucide-react';
 import { Product } from '../types';
 import { useStore } from '../context/StoreContext';
+import { optimizedImage } from '../lib/image';
 
 interface ProductCardProps {
   product: Product;
@@ -40,7 +41,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image & Badges */}
       <div className="relative aspect-square w-full bg-slate-100 overflow-hidden">
         <img
-          src={product.images[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'}
+          src={optimizedImage(product.images[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800', 400)}
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
           loading="lazy"

@@ -69,6 +69,7 @@ const PrivacyPage = lazy(() =>
 const TermsPage = lazy(() =>
   import('./pages/StaticPages').then((m) => ({ default: m.TermsPage }))
 );
+const GuidesPage = lazy(() => import('./pages/GuidesPage').then((m) => ({ default: m.GuidesPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 /** Route-level Suspense fallback */
@@ -85,7 +86,7 @@ const KNOWN_PAGES = [
   'home', 'products', 'product-detail', 'shops', 'shop-detail', 'create-shop',
   'upload-product', 'checkout', 'order-confirmation', 'orders', 'wishlist', 'settings',
   'vendor-dashboard', 'admin-panel',
-  'about', 'contact', 'faq', 'privacy', 'terms'
+  'about', 'contact', 'faq', 'privacy', 'terms', 'guides'
 ];
 
 interface RouteState {
@@ -240,6 +241,9 @@ const Router: React.FC = () => {
       case 'terms':
         setSeo({ title: 'Terms & Conditions', description: 'The rules governing use of the Showy marketplace.', path: '/terms' });
         break;
+      case 'guides':
+        setSeo({ title: 'Buying Guides — Online Shopping BD', description: 'Expert buying guides for jerseys, gadgets, fashion and more in Bangladesh.', path: '/guides' });
+        break;
       case 'orders':
         setSeo({ title: 'My Orders & Invoices', description: 'Track your Showy orders and print invoices.', path: '/orders' });
         break;
@@ -370,6 +374,9 @@ const Router: React.FC = () => {
 
       case 'admin-panel':
         return <AdminPanel onNavigate={navigate} />;
+
+      case 'guides':
+        return <GuidesPage onNavigate={navigate} />;
 
       case 'about':
         return <AboutPage onBack={() => window.history.length > 1 ? window.history.back() : navigate('home')} onNavigate={navigate} />;

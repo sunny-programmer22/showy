@@ -1,7 +1,7 @@
-﻿import React from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Store, ArrowRight, ShieldCheck, Sparkles, Truck, BadgePercent,
-  ShoppingBag, TrendingUp, LayoutDashboard
+  ShoppingBag, TrendingUp, LayoutDashboard, Flame, Clock
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLang } from '../lib/i18n';
@@ -20,6 +20,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
   const { products, shops, currentUser, isLoading, recentlyViewed } = useStore();
   const { t } = useLang();
   const recentlyProducts = recentlyViewed.map((id) => products.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as Product[];
+  const flashProducts = products.filter((p) => p.discount_price && p.is_active).slice(0, 4);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const flashEnd = React.useMemo(() => Date.now() + 24 * 60 * 60 * 1000, []);
+  const flashLeft = Math.max(0, flashEnd - now);
+  const flashH = String(Math.floor(flashLeft / 3600000)).padStart(2, '0');
+  const flashM = String(Math.floor((flashLeft % 3600000) / 60000)).padStart(2, '0');
+  const flashS = String(Math.floor((flashLeft % 60000) / 1000)).padStart(2, '0');
 
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
   const dataLoading = isLoading && products.length === 0;
@@ -129,6 +137,23 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           ))}
         </div>
       </section>
+
+      {/* ===== Flash Deals ===== */}
+      {flashProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2"><Flame className="w-6 h-6 text-rose-500" /> Flash Deals <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full text-xs">Limited time</span></h2>
+            <div className="flex items-center gap-1.5 text-sm font-mono font-bold bg-slate-900 text-white px-3 py-1.5 rounded-xl">
+              <Clock className="w-4 h-4" /> {flashH}:{flashM}:{flashS}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {flashProducts.map((p) => (
+              <ProductCard key={`flash-${p.id}`} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ===== Vendor CTA banner ===== */}
       {!userShop && (

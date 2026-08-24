@@ -68,7 +68,28 @@ export const STRINGS: Dict = {
   free: { en: 'FREE', bn: 'ফ্রি' },
   total: { en: 'Total', bn: 'মোট' },
   checkout: { en: 'Proceed to Checkout', bn: 'চেকআউট করুন' },
-  quantity: { en: 'Qty', bn: 'পরিমাণ' }
+  quantity: { en: 'Qty', bn: 'পরিমাণ' },
+
+  /* Wishlist & Flash */
+  wishlist: { en: 'Wishlist', bn: 'ইচ্ছা তালিকা' },
+  flashDeals: { en: 'Flash Deals', bn: 'ফ্ল্যাশ ডিল' },
+  recentlyViewed: { en: 'Recently Viewed', bn: 'সম্প্রতি দেখেছেন' },
+  limitedTime: { en: 'Limited time', bn: 'সীমিত সময়' },
+
+  /* Settings & Orders */
+  settings: { en: 'Settings', bn: 'সেটিংস' },
+  darkMode: { en: 'Dark mode', bn: 'ডার্ক মোড' },
+  referral: { en: 'Refer & Earn', bn: 'রেফার ও আয়' },
+  loyaltyPoints: { en: 'Loyalty Points', bn: 'লয়্যালটি পয়েন্ট' },
+  cancelOrder: { en: 'Cancel Order', bn: 'অর্ডার বাতিল' },
+  requestReturn: { en: 'Request Return', bn: 'রিটার্ন অনুরোধ' },
+  downloadInvoice: { en: 'Download Invoice', bn: 'ইনভয়েস ডাউনলোড' },
+  inStockOnly: { en: 'In stock only', bn: 'শুধু স্টকে' },
+  followShop: { en: 'Follow', bn: 'ফলো করুন' },
+  followingShop: { en: 'Following', bn: 'ফলো করছেন' },
+  qaTitle: { en: 'Questions & Answers', bn: 'প্রশ্ন ও উত্তর' },
+  askQuestion: { en: 'Ask a question', bn: 'প্রশ্ন করুন' },
+  helpful: { en: 'Helpful', bn: 'সহায়ক' },
 };
 
 export type StringKey = keyof typeof STRINGS;

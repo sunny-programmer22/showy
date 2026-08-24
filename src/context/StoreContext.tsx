@@ -476,6 +476,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setLoyaltyPoints((p) => p + pts);
         if (supabase && currentUser) (supabase.from('profiles').update as any)({ loyalty_points: loyaltyPoints + pts }).eq('id', currentUser.id).then(() => {});
       }
+      try { (supabase as any)?.functions?.invoke('send-order-email', { body: { to: order.customer_email, order_number: order.order_number, total: order.total_amount, items: order.items } }); } catch {}
 
       // Refresh wallets so vendor dashboards show the credit instantly
       if (paymentMethod !== 'cod') {
@@ -555,6 +556,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearCart();
     const _pts = Math.floor(newOrder.total_amount * 0.01);
     if (_pts > 0) setLoyaltyPoints((p) => p + _pts);
+    try { (supabase as any)?.functions?.invoke('send-order-email', { body: { to: newOrder.customer_email, order_number: newOrder.order_number, total: newOrder.total_amount, items: newOrder.items } }); } catch {}
     return newOrder;
   };
 

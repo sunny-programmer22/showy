@@ -107,6 +107,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <NavLink label="About Showy" page="about" />
               <NavLink label="Contact Us" page="contact" />
               <NavLink label="FAQ" page="faq" />
+              <NavLink label="Buying Guides" page="guides" />
             </ul>
           </div>
 
