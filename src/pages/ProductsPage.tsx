@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { SearchX, PackageSearch } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { FilterSidebar } from '../components/FilterSidebar';
@@ -17,10 +17,24 @@ type SortKey = 'popular' | 'price-asc' | 'price-desc' | 'newest' | 'rating';
 export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onNavigateToShop }) => {
   const {
     products, searchQuery, setSearchQuery,
-    selectedCategory, selectedShopId, priceRange, isLoading
+    selectedCategory, selectedShopId, priceRange, isLoading,
+    inStockOnly, minRating, sortBy, setSortBy
   } = useStore();
-  const [sortBy, setSortBy] = React.useState<SortKey>('popular');
   const dataLoading = isLoading && products.length === 0;
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'all') params.set('cat', selectedCategory);
+    if (selectedShopId !== 'all') params.set('shop', selectedShopId);
+    if (priceRange[1] !== 50000) params.set('max', String(priceRange[1]));
+    if (searchQuery) params.set('q', searchQuery);
+    if (inStockOnly) params.set('stock', '1');
+    if (minRating) params.set('rating', String(minRating));
+    if (sortBy !== 'popular') params.set('sort', sortBy);
+    const qs = params.toString();
+    const url = qs ? `/products?${qs}` : '/products';
+    window.history.replaceState({}, '', url);
+  }, [selectedCategory, selectedShopId, priceRange, searchQuery, inStockOnly, minRating, sortBy]);
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -44,6 +58,9 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onN
     // Price range (uses effective price)
     list = list.filter((p) => (p.discount_price ?? p.price) <= priceRange[1]);
 
+    if (inStockOnly) list = list.filter((p) => p.stock > 0);
+    if (minRating) list = list.filter((p) => p.rating >= minRating);
+
     // Sorting
     switch (sortBy) {
       case 'price-asc': list.sort((a, b) => (a.discount_price ?? a.price) - (b.discount_price ?? b.price)); break;
@@ -54,7 +71,7 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onSelectProduct, onN
     }
 
     return list.filter((p) => p.is_active);
-  }, [products, searchQuery, selectedCategory, selectedShopId, priceRange, sortBy]);
+  }, [products, searchQuery, selectedCategory, selectedShopId, priceRange, sortBy, inStockOnly, minRating]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

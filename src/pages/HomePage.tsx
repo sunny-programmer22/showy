@@ -17,8 +17,9 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateToShop, onNavigate }) => {
-  const { products, shops, currentUser, isLoading } = useStore();
+  const { products, shops, currentUser, isLoading, recentlyViewed } = useStore();
   const { t } = useLang();
+  const recentlyProducts = recentlyViewed.map((id) => products.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as Product[];
 
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
   const dataLoading = isLoading && products.length === 0;
@@ -210,6 +211,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           ))}
         </div>
       </section>
+
+      {/* ===== Recently Viewed ===== */}
+      {recentlyProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-extrabold tracking-tight text-slate-900">Recently Viewed</h2>
+            <button onClick={() => onNavigate('products')} className="text-xs font-bold text-brand-600 hover:text-brand-700">Browse more →</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {recentlyProducts.map((p) => (
+              <ProductCard key={`recent-${p.id}`} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ===== SEO content block ===== */}
       <section className="mt-14 bg-slate-50 border-t border-slate-200/70">

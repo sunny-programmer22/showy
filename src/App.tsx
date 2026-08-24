@@ -43,6 +43,9 @@ const OrderConfirmationPage = lazy(() =>
 const OrdersPage = lazy(() =>
   import('./pages/OrdersPage').then((m) => ({ default: m.OrdersPage }))
 );
+const WishlistPage = lazy(() =>
+  import('./pages/WishlistPage').then((m) => ({ default: m.WishlistPage }))
+);
 const VendorDashboard = lazy(() =>
   import('./pages/VendorDashboard').then((m) => ({ default: m.VendorDashboard }))
 );
@@ -79,7 +82,7 @@ const PageLoader: React.FC = () => (
 
 const KNOWN_PAGES = [
   'home', 'products', 'product-detail', 'shops', 'shop-detail', 'create-shop',
-  'upload-product', 'checkout', 'order-confirmation', 'orders', 'settings',
+  'upload-product', 'checkout', 'order-confirmation', 'orders', 'wishlist', 'settings',
   'vendor-dashboard', 'admin-panel',
   'about', 'contact', 'faq', 'privacy', 'terms'
 ];
@@ -236,6 +239,9 @@ const Router: React.FC = () => {
       case 'orders':
         setSeo({ title: 'My Orders & Invoices', description: 'Track your Showy orders and print invoices.', path: '/orders' });
         break;
+      case 'wishlist':
+        setSeo({ title: 'My Wishlist', description: 'Your saved products on Showy — get notified on restock and sale.', path: '/wishlist' });
+        break;
       case 'settings':
         setSeo({ title: 'Settings', description: 'Manage your Showy account, address, language and appearance.', path: '/settings' });
         break;
@@ -348,6 +354,9 @@ const Router: React.FC = () => {
 
       case 'orders':
         return <OrdersPage onBack={() => navigate('home')} />;
+
+      case 'wishlist':
+        return <WishlistPage onSelectProduct={(p) => navigate('product-detail', { product: p })} onNavigateToShop={(shopId) => navigate('shop-detail', { shopId })} onNavigate={navigate} />;
 
       case 'settings':
         return <SettingsPage />;

@@ -12,7 +12,12 @@ export const FilterSidebar: React.FC = () => {
     setSelectedShopId,
     priceRange,
     setPriceRange,
-    setSearchQuery
+    setSearchQuery,
+    inStockOnly,
+    setInStockOnly,
+    minRating,
+    setMinRating,
+    setSortBy
   } = useStore();
 
   const handleResetFilters = () => {
@@ -20,6 +25,9 @@ export const FilterSidebar: React.FC = () => {
     setSelectedShopId('all');
     setPriceRange([0, 50000]);
     setSearchQuery('');
+    setInStockOnly(false);
+    setMinRating(0);
+    setSortBy('popular');
   };
 
   return (
@@ -135,13 +143,19 @@ export const FilterSidebar: React.FC = () => {
         </div>
       </div>
 
+      {/* Availability */}
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+        <span className="text-xs font-bold text-slate-700">In stock only</span>
+      </label>
+
       {/* Customer Rating Filter */}
       <div>
         <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">
           Minimum Rating
         </h4>
         <div className="space-y-1">
-          {[4, 3, 2].map((stars) => (
+          {[0, 4, 3].map((stars) => (
             <label
               key={stars}
               className="flex items-center space-x-2 text-xs text-slate-600 cursor-pointer hover:text-slate-900"
@@ -149,14 +163,22 @@ export const FilterSidebar: React.FC = () => {
               <input
                 type="radio"
                 name="rating_filter"
+                checked={minRating === stars}
+                onChange={() => setMinRating(stars)}
                 className="text-brand-600 focus:ring-brand-500"
               />
-              <div className="flex items-center text-amber-400">
-                {Array.from({ length: stars }).map((_, i) => (
-                  <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                ))}
-              </div>
-              <span className="text-slate-500 font-medium">& Up</span>
+              {stars === 0 ? (
+                <span className="font-medium">Any rating</span>
+              ) : (
+                <>
+                  <div className="flex items-center text-amber-400">
+                    {Array.from({ length: stars }).map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-slate-500 font-medium">& Up</span>
+                </>
+              )}
             </label>
           ))}
         </div>

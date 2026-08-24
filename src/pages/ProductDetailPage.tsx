@@ -23,9 +23,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onNavigateToShop,
   onGoToCart
 }) => {
-  const { addToCart, shops, products, variants, currentUser, isLiveMode, setAuthModalOpen } = useStore();
+  const { addToCart, shops, products, variants, currentUser, isLiveMode, setAuthModalOpen, addRecentlyViewed } = useStore();
   const { t } = useLang();
   const [qty, setQty] = useState(1);
+
+  useEffect(() => { addRecentlyViewed(product.id); }, [product.id, addRecentlyViewed]);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
 

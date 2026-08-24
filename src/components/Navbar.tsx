@@ -13,7 +13,8 @@ import {
   LogOut,
   Sparkles,
   Package,
-  Settings
+  Settings,
+  Heart
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLang } from '../lib/i18n';
@@ -30,6 +31,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
     currentUser,
     logout,
     cartCount,
+    wishlistCount,
+    products,
     searchQuery,
     setSearchQuery,
     shops,
@@ -39,12 +42,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   // Check if current user already owns a shop
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
 
+  const q = searchQuery.trim().toLowerCase();
+  const autoProducts = q.length >= 2 ? products.filter((p) => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 5) : [];
+  const autoShops = q.length >= 2 ? shops.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 3) : [];
+  const hasAutocomplete = showAutocomplete && q.length >= 2 && (autoProducts.length > 0 || autoShops.length > 0);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowAutocomplete(false);
     onNavigate('products');
   };
 
@@ -80,12 +90,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
           </button>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md relative">
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md relative" onBlur={() => setTimeout(() => setShowAutocomplete(false), 180)}>
             <input
               type="text"
               placeholder={t('search')}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setShowAutocomplete(true)}
+              onChange={(e) => { setSearchQuery(e.target.value); setShowAutocomplete(true); }}
                 className="w-full pl-10 pr-20 py-2 bg-slate-100/90 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/60 text-sm rounded-full border border-slate-200/70 shadow-inner transition"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -95,6 +106,41 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             >
               Search
             </button>
+            {hasAutocomplete && (
+              <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-lift overflow-hidden z-50 max-h-[360px] overflow-y-auto">
+                {autoProducts.length > 0 && (
+                  <div className="p-2">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1">Products</p>
+                    {autoProducts.map((p) => (
+                      <button key={p.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onNavigate('product-detail', { product: p }); setShowAutocomplete(false); }}
+                        className="w-full text-left flex items-center gap-3 px-2 py-2 hover:bg-slate-50 rounded-xl transition">
+                        <img src={p.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 truncate">{p.title}</p>
+                          <p className="text-xs text-slate-500 truncate">৳{(p.discount_price ?? p.price).toLocaleString()} • {p.category}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {autoShops.length > 0 && (
+                  <div className="p-2 border-t border-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1">Shops</p>
+                    {autoShops.map((s) => (
+                      <button key={s.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onNavigate('shop-detail', { shopId: s.id }); setShowAutocomplete(false); }}
+                        className="w-full text-left flex items-center gap-2 px-2 py-2 hover:bg-emerald-50 rounded-xl transition">
+                        <img src={s.logo_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                        <span className="text-sm font-bold text-slate-700 truncate">{s.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setShowAutocomplete(false); onNavigate('products'); }}
+                  className="w-full text-center py-2.5 text-xs font-bold text-brand-600 hover:bg-brand-50 border-t border-slate-100">
+                  See all results for "{q}" →
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Navigation Items */}
@@ -250,6 +296,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
                 <User className="w-3.5 h-3.5" /> {t('signIn')}
               </button>
             )}
+
+            <button onClick={() => onNavigate('wishlist')} className="relative p-1.5 sm:p-2 text-slate-700 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition" title="Wishlist" aria-label="Wishlist">
+              <Heart className={`w-6 h-6 ${wishlistCount > 0 ? 'fill-rose-500 text-rose-500' : ''}`} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[18px] px-1 flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
 
             {/* Cart */}
             <button

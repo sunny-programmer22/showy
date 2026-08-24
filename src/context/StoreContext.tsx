@@ -68,6 +68,20 @@ interface StoreContextType {
   setSelectedShopId: (shopId: string) => void;
   priceRange: [number, number];
   setPriceRange: (range: [number, number]) => void;
+  inStockOnly: boolean;
+  setInStockOnly: (v: boolean) => void;
+  minRating: number;
+  setMinRating: (v: number) => void;
+  sortBy: string;
+  setSortBy: (v: string) => void;
+
+  // Wishlist & Recently Viewed
+  wishlist: string[];
+  toggleWishlist: (productId: string) => Promise<void>;
+  isWishlisted: (id: string) => boolean;
+  wishlistCount: number;
+  recentlyViewed: string[];
+  addRecentlyViewed: (productId: string) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -128,9 +142,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedShopId, setSelectedShopId] = useState('all');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+  const [selectedCategory, setSelectedCategory] = useState(() => new URLSearchParams(window.location.search).get('cat') ?? 'all');
+  const [selectedShopId, setSelectedShopId] = useState(() => new URLSearchParams(window.location.search).get('shop') ?? 'all');
+  const [priceRange, setPriceRange] = useState<[number, number]>(() => {
+    const m = new URLSearchParams(window.location.search).get('max');
+    return [0, m ? Number(m) : 50000];
+  });
+  const [inStockOnly, setInStockOnly] = useState(() => new URLSearchParams(window.location.search).get('stock') === '1');
+  const [minRating, setMinRating] = useState(() => Number(new URLSearchParams(window.location.search).get('rating') ?? 0));
+  const [sortBy, setSortBy] = useState(() => new URLSearchParams(window.location.search).get('sort') ?? 'popular');
+
+  const [wishlist, setWishlist] = useState<string[]>(() => readLS('showy_wishlist', []));
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => readLS('showy_recent', []));
 
   /* ------------------------- PERSISTENCE (demo) ---------------------- */
   useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(shops)); }, [shops, LIVE]);
@@ -138,6 +161,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders)); }, [orders, LIVE]);
   useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify(payoutRequests)); }, [payoutRequests, LIVE]);
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart)); }, [cart]);
+  useEffect(() => { localStorage.setItem('showy_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
+  useEffect(() => { localStorage.setItem('showy_recent', JSON.stringify(recentlyViewed)); }, [recentlyViewed]);
 
   /* --------------------------- DATA LOADERS -------------------------- */
 
@@ -173,6 +198,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           amount: Number(r.amount)
         }))
       );
+      if (supabase) {
+        try {
+          const { data: wl } = await supabase.from('wishlist').select('product_id').eq('user_id', userId);
+          if (wl && wl.length) setWishlist((wl as any[]).map((r: any) => r.product_id));
+        } catch {}
+      }
       if (profile?.role === 'admin') {
         setUsers(await api.fetchProfiles());
       }
@@ -355,6 +386,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const cartTotal = cart.reduce((total, item) => total + lineUnitPrice(item) * item.quantity, 0);
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
+
+  /* --------------------------- WISHLIST & RECENT --------------------------- */
+  const wishlistCount = wishlist.length;
+  const isWishlisted = useCallback((id: string) => wishlist.includes(id), [wishlist]);
+  const toggleWishlist = useCallback(async (productId: string) => {
+    const is = wishlist.includes(productId);
+    setWishlist((prev) => (is ? prev.filter((x) => x !== productId) : [...prev, productId]));
+    if (LIVE && currentUser && supabase) {
+      try {
+        if (is) await supabase.from('wishlist').delete().eq('user_id', currentUser.id).eq('product_id', productId);
+        else await (supabase.from('wishlist').insert as any)({ user_id: currentUser.id, product_id: productId });
+      } catch {}
+    }
+  }, [wishlist, LIVE, currentUser]);
+  const addRecentlyViewed = useCallback((productId: string) => {
+    setRecentlyViewed((prev) => [productId, ...prev.filter((x) => x !== productId)].slice(0, 10));
+  }, []);
 
   /* ------------------------------ ORDERS ----------------------------- */
 
@@ -723,7 +771,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         selectedShopId,
         setSelectedShopId,
         priceRange,
-        setPriceRange
+        setPriceRange,
+        inStockOnly,
+        setInStockOnly,
+        minRating,
+        setMinRating,
+        sortBy,
+        setSortBy,
+        wishlist,
+        toggleWishlist,
+        isWishlisted,
+        wishlistCount,
+        recentlyViewed,
+        addRecentlyViewed
       }}
     >
       {children}

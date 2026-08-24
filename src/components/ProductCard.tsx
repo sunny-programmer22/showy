@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, ShoppingCart, Eye, Store, ShieldCheck } from 'lucide-react';
+import { Star, ShoppingCart, Eye, Store, ShieldCheck, Heart } from 'lucide-react';
 import { Product } from '../types';
 import { useStore } from '../context/StoreContext';
 
@@ -14,8 +14,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onNavigateToShop,
   onSelectProduct
 }) => {
-  const { addToCart, shops } = useStore();
+  const { addToCart, shops, toggleWishlist, isWishlisted } = useStore();
   const [added, setAdded] = useState(false);
+  const wished = isWishlisted(product.id);
 
   const shop = shops.find((s) => s.id === product.shop_id);
 
@@ -66,6 +67,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Eye className="w-3.5 h-3.5" /> Quick View
           </span>
         </div>
+
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+          aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+          className={`absolute ${hasDiscount ? 'top-12' : 'top-3'} left-3 p-2 rounded-full shadow-md border transition ${wished ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white/90 border-white text-slate-400 hover:text-rose-500'}`}
+        >
+          <Heart className={`w-4 h-4 ${wished ? 'fill-current' : ''}`} />
+        </button>
       </div>
 
       {/* Product Content */}
