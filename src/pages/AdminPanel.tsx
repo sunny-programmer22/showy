@@ -126,7 +126,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
   }, [tab]);
   const handleBannerUpload = async (file: File) => {
     if (!supabase) return;
-    const path = `banners/${Date.now()}-${file.name}`;
+    const { data: { user } } = await supabase.auth.getUser();
+    const uid = user?.id;
+    if (!uid) { toast.error('Please log in again'); return; }
+    const path = `${uid}/banners/${Date.now()}-${file.name}`;
     const { error } = await supabase.storage.from('media').upload(path, file);
     if (error) { toast.error(error.message); return; }
     const { data } = supabase.storage.from('media').getPublicUrl(path);
