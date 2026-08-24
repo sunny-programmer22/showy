@@ -65,6 +65,7 @@ const PrivacyPage = lazy(() =>
 const TermsPage = lazy(() =>
   import('./pages/StaticPages').then((m) => ({ default: m.TermsPage }))
 );
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 /** Route-level Suspense fallback */
 const PageLoader: React.FC = () => (
@@ -78,7 +79,7 @@ const PageLoader: React.FC = () => (
 
 const KNOWN_PAGES = [
   'home', 'products', 'product-detail', 'shops', 'shop-detail', 'create-shop',
-  'upload-product', 'checkout', 'order-confirmation', 'orders',
+  'upload-product', 'checkout', 'order-confirmation', 'orders', 'settings',
   'vendor-dashboard', 'admin-panel',
   'about', 'contact', 'faq', 'privacy', 'terms'
 ];
@@ -129,6 +130,10 @@ const Router: React.FC = () => {
   const { products, shops, orders, cartCount } = useStore();
   const [route, setRoute] = useState<RouteState>(() => routeFromLocation());
   const [cartOpen, setCartOpen] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('showy_theme') === 'dark') document.documentElement.classList.add('dark');
+  }, []);
 
   const navigate = (target: string, extra?: any) => {
     const params = extra || {};
@@ -230,6 +235,9 @@ const Router: React.FC = () => {
         break;
       case 'orders':
         setSeo({ title: 'My Orders & Invoices', description: 'Track your Showy orders and print invoices.', path: '/orders' });
+        break;
+      case 'settings':
+        setSeo({ title: 'Settings', description: 'Manage your Showy account, address, language and appearance.', path: '/settings' });
         break;
       default:
         setSeo({
@@ -340,6 +348,9 @@ const Router: React.FC = () => {
 
       case 'orders':
         return <OrdersPage onBack={() => navigate('home')} />;
+
+      case 'settings':
+        return <SettingsPage />;
 
       case 'vendor-dashboard':
         return <VendorDashboard onNavigate={navigate} />;

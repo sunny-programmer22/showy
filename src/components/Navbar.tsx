@@ -12,7 +12,8 @@ import {
   LayoutDashboard,
   LogOut,
   Sparkles,
-  Package
+  Package,
+  Settings
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLang } from '../lib/i18n';
@@ -156,6 +157,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
               {lang === 'en' ? 'বাং' : 'EN'}
             </button>
 
+            <button
+              onClick={() => onNavigate('settings')}
+              aria-label="Settings"
+              title="Settings"
+              className={`p-2 rounded-xl border transition shrink-0 ${activePage === 'settings' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'}`}
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
             {currentUser ? (
               /* Logged-in user menu */
               <div className="relative">
@@ -195,6 +205,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
                       <button onClick={() => { onNavigate('orders'); setIsUserDropdownOpen(false); }}
                         className="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 font-semibold text-slate-700 flex items-center gap-2">
                         <Package className="w-3.5 h-3.5 text-slate-400" /> My Orders
+                      </button>
+
+                      <button onClick={() => { onNavigate('settings'); setIsUserDropdownOpen(false); }}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 font-semibold text-slate-700 flex items-center gap-2">
+                        <Settings className="w-3.5 h-3.5 text-slate-400" /> Settings
                       </button>
 
                       {userShop && (
@@ -292,6 +307,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             {currentUser && (
               <button onClick={() => { onNavigate('orders'); setIsMobileMenuOpen(false); }} className="text-left py-2 hover:text-brand-600 flex items-center gap-2">
                 <Package className="w-4 h-4" /> My Orders
+              </button>
+            )}
+            {currentUser && (
+              <button onClick={() => { onNavigate('settings'); setIsMobileMenuOpen(false); }} className="text-left py-2 hover:text-brand-600 flex items-center gap-2">
+                <Settings className="w-4 h-4" /> Settings
               </button>
             )}
             {userShop ? (
