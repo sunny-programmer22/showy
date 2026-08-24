@@ -22,7 +22,12 @@ const HeroCarousel: React.FC = () => {
   const [slides, setSlides] = useState<Banner[]>(FALLBACK);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
   const touchX = useRef<number | null>(null);
+
+  // Clone first slide at the end for seamless forward loop
+  const extended = slides.length > 1 ? [...slides, slides[0]] : slides;
+  const isClone = idx === slides.length; // on the cloned slide
 
   useEffect(() => {
     if (!supabase) return;
@@ -34,15 +39,57 @@ const HeroCarousel: React.FC = () => {
       .then(({ data }) => { if (data && data.length > 0) setSlides(data as Banner[]); }, () => {});
   }, []);
 
+  // Reset idx if slides shrink
+  useEffect(() => { if (idx > slides.length) setIdx(0); }, [slides.length, idx]);
+
   useEffect(() => {
     if (paused || slides.length < 2) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 5000);
+    const t = setInterval(() => setIdx((i) => i + 1), 5000);
     return () => clearInterval(t);
   }, [paused, slides.length]);
 
+  // After sliding onto the clone, snap back to real first slide without animation
+  useEffect(() => {
+    if (!isClone) return;
+    const snap = setTimeout(() => {
+      setTransitionEnabled(false);
+      setIdx(0);
+      // re-enable on next frame so the snap itself isn't animated
+      requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
+    }, 720);
+    return () => clearTimeout(snap);
+  }, [isClone]);
+
   useEffect(() => { slides.forEach((s) => { if (s.image_url) { const im = new Image(); im.src = s.image_url; } }); }, [slides]);
 
-  const go = (d: number) => setIdx((i) => (i + d + slides.length) % slides.length);
+  const go = (d: number) => {
+    if (isClone) return; // ignore input during clone snap
+    if (d === 1) {
+      setTransitionEnabled(true);
+      setIdx((i) => i + 1);
+    } else {
+      // backward: allow natural reverse, but make it seamless from first slide
+      if (idx === 0) {
+        // jump to clone position without animation, then animate to last real
+        setTransitionEnabled(false);
+        setIdx(slides.length);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          setTransitionEnabled(true);
+          setIdx(slides.length - 1);
+        }));
+      } else {
+        setTransitionEnabled(true);
+        setIdx((i) => i - 1);
+      }
+    }
+  };
+
+  const goToDot = (i: number) => {
+    setTransitionEnabled(true);
+    setIdx(i);
+  };
+
+  const activeDot = isClone ? 0 : idx;
 
   return (
     <div
@@ -59,13 +106,12 @@ const HeroCarousel: React.FC = () => {
       aria-roledescription="carousel"
     >
       <div
-        className="flex h-full transition-transform duration-700 ease-out"
+        className={`flex h-full ${transitionEnabled ? 'transition-transform duration-700 ease-out' : ''}`}
         style={{ transform: `translateX(-${idx * 100}%)` }}
       >
-        {slides.map((s, i) => (
-          <div key={s.id} className="relative w-full h-full shrink-0" style={!s.image_url ? { background: GRADS[i % GRADS.length] } : undefined}>
+        {extended.map((s, i) => (
+          <div key={`${s.id}-${i}`} className="relative w-full h-full shrink-0" style={!s.image_url ? { background: GRADS[i % GRADS.length] } : undefined}>
             {s.image_url && <img src={s.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" loading={i === 0 ? 'eager' : 'lazy'} />}
-            {/* Opacity: highest at bottom → lowest at very top */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
             <div className="absolute bottom-6 left-4 sm:left-8 max-w-md">
               <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-amber-300 mb-1">
@@ -90,8 +136,8 @@ const HeroCarousel: React.FC = () => {
           </button>
           <div className="absolute bottom-2 right-4 flex gap-1.5">
             {slides.map((s, i) => (
-              <button key={s.id} onClick={() => setIdx(i)} aria-label={`Go to poster ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'}`} />
+              <button key={s.id} onClick={() => goToDot(i)} aria-label={`Go to poster ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${i === activeDot ? 'w-5 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'}`} />
             ))}
           </div>
         </>
