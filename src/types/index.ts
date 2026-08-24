@@ -2,9 +2,9 @@ export type UserRole = 'customer' | 'vendor' | 'admin';
 
 export type PaymentMethod = 'bkash' | 'nagad' | 'card' | 'cod';
 
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'return_requested' | 'returned';
 
-export type ItemStatus = 'pending' | 'processing' | 'shipped' | 'delivered';
+export type ItemStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'return_requested';
 
 export interface UserProfile {
   id: string;

@@ -82,6 +82,11 @@ interface StoreContextType {
   wishlistCount: number;
   recentlyViewed: string[];
   addRecentlyViewed: (productId: string) => void;
+
+  loyaltyPoints: number;
+  referralCode: string;
+  cancelOrder: (orderId: string) => Promise<void>;
+  requestReturn: (orderId: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -154,6 +159,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [wishlist, setWishlist] = useState<string[]>(() => readLS('showy_wishlist', []));
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => readLS('showy_recent', []));
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number>(() => readLS('showy_points', 0));
+  const [referralCode] = useState<string>(() => {
+    const saved = localStorage.getItem('showy_referral_code');
+    if (saved) return saved;
+    const code = `SHOWY-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    localStorage.setItem('showy_referral_code', code);
+    return code;
+  });
 
   /* ------------------------- PERSISTENCE (demo) ---------------------- */
   useEffect(() => { if (!LIVE) localStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(shops)); }, [shops, LIVE]);
@@ -163,6 +176,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart)); }, [cart]);
   useEffect(() => { localStorage.setItem('showy_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
   useEffect(() => { localStorage.setItem('showy_recent', JSON.stringify(recentlyViewed)); }, [recentlyViewed]);
+  useEffect(() => { localStorage.setItem('showy_points', JSON.stringify(loyaltyPoints)); }, [loyaltyPoints]);
 
   /* --------------------------- DATA LOADERS -------------------------- */
 
@@ -404,6 +418,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setRecentlyViewed((prev) => [productId, ...prev.filter((x) => x !== productId)].slice(0, 10));
   }, []);
 
+  const cancelOrder = useCallback(async (orderId: string) => {
+    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, overall_status: 'cancelled' as any, items: o.items.map((i) => ({ ...i, status: 'pending' as any })) } : o));
+    if (LIVE && supabase) await (supabase.from('orders').update as any)({ overall_status: 'cancelled' }).eq('id', orderId);
+  }, [LIVE]);
+
+  const requestReturn = useCallback(async (orderId: string) => {
+    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, overall_status: 'return_requested' as any } : o));
+    if (LIVE && supabase) await (supabase.from('orders').update as any)({ overall_status: 'return_requested' }).eq('id', orderId);
+    toast.success('Return requested — admin will contact you within 24h.');
+  }, [LIVE]);
+
   /* ------------------------------ ORDERS ----------------------------- */
 
   const placeOrder = async (
@@ -446,6 +471,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       clearCart();
+      const pts = Math.floor(order.total_amount * 0.01);
+      if (pts > 0) {
+        setLoyaltyPoints((p) => p + pts);
+        if (supabase && currentUser) (supabase.from('profiles').update as any)({ loyalty_points: loyaltyPoints + pts }).eq('id', currentUser.id).then(() => {});
+      }
 
       // Refresh wallets so vendor dashboards show the credit instantly
       if (paymentMethod !== 'cod') {
@@ -523,6 +553,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
+    const _pts = Math.floor(newOrder.total_amount * 0.01);
+    if (_pts > 0) setLoyaltyPoints((p) => p + _pts);
     return newOrder;
   };
 
@@ -783,7 +815,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isWishlisted,
         wishlistCount,
         recentlyViewed,
-        addRecentlyViewed
+        addRecentlyViewed,
+        loyaltyPoints,
+        referralCode,
+        cancelOrder,
+        requestReturn
       }}
     >
       {children}

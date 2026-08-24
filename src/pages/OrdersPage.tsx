@@ -1,10 +1,11 @@
 import React from 'react';
-import { Package, CheckCircle2, Truck, Clock, XCircle, ChevronDown } from 'lucide-react';
+import { Package, CheckCircle2, Truck, Clock, XCircle, ChevronDown, FileText, RefreshCw } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { VariantChip } from '../components/ui/VariantChip';
 import { Order, OrderStatus } from '../types';
+import { toast } from '../components/ui/Toast';
 
 interface OrdersPageProps {
   onBack: () => void;
@@ -18,7 +19,12 @@ const STATUS_STEPS: { key: OrderStatus; label: string; icon: any }[] = [
 ];
 
 export const OrdersPage: React.FC<OrdersPageProps> = ({ onBack }) => {
-  const { orders, currentUser, isLoading } = useStore();
+  const { orders, currentUser, isLoading, cancelOrder, requestReturn } = useStore();
+
+  const downloadInvoice = (order: Order) => {
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${order.order_number}</title><style>body{font-family:system-ui;padding:24px;color:#0f172a}h1{font-size:20px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left;font-size:13px}th{background:#f8fafc}</style></head><body><h1>Showy Store — Invoice ${order.order_number}</h1><p>Date: ${new Date(order.created_at).toLocaleString()}<br>Customer: ${order.customer_name} (${order.customer_phone})<br>Payment: ${order.payment_method} — ${order.payment_status} ${order.transaction_id ? '· ' + order.transaction_id : ''}</p><table><thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>${order.items.map((i) => `<tr><td>${i.product_title}${i.variant_label ? ' (' + i.variant_label + ')' : ''} — ${i.shop_name}</td><td>${i.quantity}</td><td>৳${i.unit_price}</td><td>৳${i.total_price}</td></tr>`).join('')}<tr><td colspan="3" style="text-align:right;font-weight:700">Total</td><td>৳${order.total_amount}</td></tr></tbody></table><p style="margin-top:24px;font-size:11px;color:#64748b">Thank you for shopping at Showy! For support: siddiknurealam1@gmail.com · 01863875033</p><script>window.print()</script></body></html>`;
+    const w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); } else toast.error('Pop-up blocked — allow pop-ups for invoices');
+  };
 
   // Customers see their own orders
   const myOrders = currentUser?.role === 'customer'
@@ -183,6 +189,16 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onBack }) => {
                   )}
                   {order.transaction_id && <p className="font-mono text-slate-400">TrxID: {order.transaction_id}</p>}
                 </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <button onClick={() => downloadInvoice(order)} className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Download Invoice</button>
+                {['pending','processing'].includes(order.overall_status) && order.overall_status !== 'cancelled' && (
+                  <button onClick={() => cancelOrder(order.id).then(() => toast.success('Order cancelled')).catch((e: any) => toast.error(e.message))} className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5"><XCircle className="w-3.5 h-3.5" /> Cancel Order</button>
+                )}
+                {order.overall_status === 'delivered' && (Date.now() - new Date(order.created_at).getTime() < 7*86400000) && (
+                  <button onClick={() => requestReturn(order.id)} className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> Request Return</button>
+                )}
+                {order.overall_status === 'return_requested' && <span className="px-3 py-2 bg-amber-100 text-amber-700 rounded-xl text-xs font-bold">Return requested</span>}
               </div>
             </div>
           </details>

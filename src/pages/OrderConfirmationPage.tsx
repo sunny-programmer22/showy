@@ -3,6 +3,7 @@ import { CheckCircle2, Package, Printer, Home, ChevronRight, Truck } from 'lucid
 import confetti from 'canvas-confetti';
 import { useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
+import { trackPurchase } from '../lib/pixel';
 import { VariantChip } from '../components/ui/VariantChip';
 import { Order } from '../types';
 
@@ -27,8 +28,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         origin: { y: 0.6 },
         colors: ['#0284c7', '#22c55e', '#f59e0b', '#e2136e']
       });
+      trackPurchase(order.order_number, order.total_amount);
     }
-  }, []);
+  }, [order]);
 
   if (!order) {
     return (

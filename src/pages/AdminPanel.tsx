@@ -2,9 +2,10 @@
 import {
   ShieldAlert, TrendingUp, Percent, Store as StoreIcon, Users,
   Package, Wallet, CheckCircle2, XCircle, BadgePercent,
-  TicketPercent, ScrollText, Plus, Trash2, Power
+  TicketPercent, ScrollText, Plus, Trash2, Power, ImagePlus, Upload
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { supabase } from '../lib/supabase';
 import { toast } from '../components/ui/Toast';
 import { confirmDialog } from '../components/ui/ConfirmDialog';
 import * as api from '../lib/api';
@@ -14,7 +15,7 @@ interface AdminPanelProps {
   onNavigate: (page: string) => void;
 }
 
-  type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'transactions' | 'coupons' | 'security';
+  type Tab = 'overview' | 'shops' | 'orders' | 'payouts' | 'transactions' | 'banners' | 'coupons' | 'security';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
   const {
@@ -86,6 +87,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
     .reduce((sum, o) => sum + o.items.filter((i) => i.is_admin_shop).reduce((s, i) => s + i.total_price, 0), 0);
   const pendingPayouts = payoutRequests.filter((pr) => pr.status === 'pending');
   const pendingPayoutTotal = pendingPayouts.reduce((sum, pr) => sum + pr.amount, 0);
+  const paidOrders = orders.filter((o) => o.payment_status === 'paid');
+  const aov = paidOrders.length ? Math.round(totalGMV / paidOrders.length) : 0;
+  const customerCounts = paidOrders.reduce((acc: Record<string, number>, o) => { acc[o.customer_id] = (acc[o.customer_id] || 0) + 1; return acc; }, {});
+  const repeatCustomers = Object.values(customerCounts).filter((c) => c > 1).length;
+  const repeatRate = Object.keys(customerCounts).length ? Math.round((repeatCustomers / Object.keys(customerCounts).length) * 100) : 0;
 
   const { fetchAdminTransactions, toggleShopVerified } = useStore();
   const [txns, setTxns] = useState<any[]>([]);
@@ -109,12 +115,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
     URL.revokeObjectURL(a.href);
   };
 
+  const [adminBanners, setAdminBanners] = useState<any[]>([]);
+  const [bannerForm, setBannerForm] = useState({ headline: '', sub: '', link: '', image_url: '', sort: '0' });
+  const [savingBanner, setSavingBanner] = useState(false);
+  useEffect(() => {
+    if (tab === 'banners' && supabase) {
+      supabase.from('banners').select('*').order('sort').then(({ data }) => { if (data) setAdminBanners(data as any[]); });
+    }
+  }, [tab]);
+  const handleBannerUpload = async (file: File) => {
+    if (!supabase) return;
+    const path = `banners/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from('media').upload(path, file);
+    if (error) { toast.error(error.message); return; }
+    const { data } = supabase.storage.from('media').getPublicUrl(path);
+    setBannerForm((f) => ({ ...f, image_url: data.publicUrl }));
+    toast.success('Image uploaded');
+  };
+  const handleCreateBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase || !bannerForm.headline.trim()) { toast.error('Headline required'); return; }
+    setSavingBanner(true);
+    const { data, error } = await (supabase.from('banners').insert as any)({ headline: bannerForm.headline.trim(), sub: bannerForm.sub.trim(), link: bannerForm.link.trim(), image_url: bannerForm.image_url.trim() || null, sort: Number(bannerForm.sort) || 0 }).select().single();
+    setSavingBanner(false);
+    if (error) toast.error(error.message);
+    else { setAdminBanners((prev) => [...prev, data]); setBannerForm({ headline: '', sub: '', link: '', image_url: '', sort: '0' }); toast.success('Banner added'); }
+  };
+
   const TABS: { key: Tab; label: string; icon: any }[] = [
     { key: 'overview', label: 'Platform Overview', icon: TrendingUp },
     { key: 'shops', label: 'Shop Management', icon: StoreIcon },
     { key: 'orders', label: 'Global Orders', icon: Package },
 { key: 'payouts', label: 'Vendor Payouts', icon: Wallet },
 { key: 'transactions', label: 'Transactions', icon: ScrollText },
+{ key: 'banners', label: 'Hero Banners', icon: ImagePlus },
 { key: 'coupons', label: 'Coupons & Promos', icon: TicketPercent },
     { key: 'security', label: 'Security Log', icon: ScrollText }
   ];
@@ -186,6 +220,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Active Shops / Products</p>
               <p className="text-2xl font-extrabold text-slate-900 mt-0.5">{shops.filter((s) => s.is_active).length} / {products.filter((p) => p.is_active).length}</p>
               <p className="text-[10px] mt-1 text-slate-400">{users.length} registered users</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Average Order Value</p>
+              <p className="text-lg font-extrabold text-slate-900">৳{aov.toLocaleString()}</p>
+              <p className="text-[10px] text-slate-400">{paidOrders.length} paid orders</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Repeat Customer Rate</p>
+              <p className="text-lg font-extrabold text-slate-900">{repeatRate}%</p>
+              <p className="text-[10px] text-slate-400">{repeatCustomers} repeat buyers</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Pending Payouts</p>
+              <p className="text-lg font-extrabold text-amber-700">৳{pendingPayoutTotal.toLocaleString()}</p>
+              <p className="text-[10px] text-slate-400">{pendingPayouts.length} requests</p>
             </div>
           </div>
 
@@ -483,6 +535,48 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onNavigate }) => {
                     <td colSpan={4}></td>
                   </tr>
                 </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* BANNERS */}
+      {tab === 'banners' && (
+        <div className="space-y-5">
+          <form onSubmit={handleCreateBanner} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
+            <h3 className="font-extrabold text-sm flex items-center gap-2"><ImagePlus className="w-4 h-4 text-brand-600" /> Add Hero Poster</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input value={bannerForm.headline} onChange={(e) => setBannerForm({ ...bannerForm, headline: e.target.value })} placeholder="Headline *" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={bannerForm.sub} onChange={(e) => setBannerForm({ ...bannerForm, sub: e.target.value })} placeholder="Sub text" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={bannerForm.link} onChange={(e) => setBannerForm({ ...bannerForm, link: e.target.value })} placeholder="Link (optional e.g. /products?cat=jersey)" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={bannerForm.sort} onChange={(e) => setBannerForm({ ...bannerForm, sort: e.target.value })} placeholder="Sort order" type="number" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" />
+              <input value={bannerForm.image_url} onChange={(e) => setBannerForm({ ...bannerForm, image_url: e.target.value })} placeholder="Image URL or upload" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm md:col-span-2" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <label className="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                <Upload className="w-3.5 h-3.5" /> Upload image
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerUpload(e.target.files[0])} />
+              </label>
+              {bannerForm.image_url && <img src={bannerForm.image_url} alt="" className="w-20 h-12 object-cover rounded-lg border" />}
+              <button type="submit" disabled={savingBanner} className="ml-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl flex items-center gap-1"><Plus className="w-3.5 h-3.5" />{savingBanner ? 'Saving…' : 'Add Banner'}</button>
+            </div>
+          </form>
+          {adminBanners.length === 0 ? <p className="text-center text-sm text-slate-400 py-8">No banners yet — add one above. Fallback branded posters show until then.</p> : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 text-slate-500 uppercase text-[10px]"><tr><th className="px-4 py-3 text-left">Preview</th><th className="px-4 py-3 text-left">Headline</th><th className="px-4 py-3 text-left">Sub</th><th className="px-4 py-3 text-left">Active</th><th className="px-4 py-3 text-right">Actions</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">
+                  {adminBanners.map((b) => (
+                    <tr key={b.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">{b.image_url ? <img src={b.image_url} alt="" className="w-20 h-12 object-cover rounded-lg" /> : <span className="text-slate-400">gradient</span>}</td>
+                      <td className="px-4 py-3 font-bold text-slate-800">{b.headline}</td>
+                      <td className="px-4 py-3 text-slate-500">{b.sub}</td>
+                      <td className="px-4 py-3"><button onClick={async () => { if (!supabase) return; const { error } = await (supabase.from('banners').update as any)({ is_active: !b.is_active }).eq('id', b.id); if (!error) setAdminBanners((prev) => prev.map((x) => x.id === b.id ? { ...x, is_active: !x.is_active } : x)); }} className={`px-2 py-1 rounded-full text-[10px] font-bold ${b.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{b.is_active ? 'Active' : 'Hidden'}</button></td>
+                      <td className="px-4 py-3 text-right"><button onClick={async () => { const ok = await confirmDialog({ title: 'Delete banner?', message: `Delete "${b.headline}"?`, confirmText: 'Delete', danger: true }); if (!ok || !supabase) return; const { error } = await supabase.from('banners').delete().eq('id', b.id); if (!error) { setAdminBanners((prev) => prev.filter((x) => x.id !== b.id)); toast.success('Deleted'); } else toast.error(error.message); }} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           )}

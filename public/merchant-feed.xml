@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+<channel>
+  <title>Showy Store — Merchant Feed</title>
+  <link>https://showy.jubair.bond/</link>
+  <description>Products from Showy multi-vendor marketplace</description>
+  <item>
+    <g:id>597330bc-be0b-4d57-b72d-eeb6d0689832</g:id>
+    <g:title>Jersey</g:title>
+    <g:description>Official Fan Edition Jersey</g:description>
+    <g:link>https://showy.jubair.bond/product/597330bc-be0b-4d57-b72d-eeb6d0689832</g:link>
+    <g:image_link>https://nuplfzsogxfsyoagqxzg.supabase.co/storage/v1/object/public/media/65bfb6ac-f6d0-459f-ad52-b962db6e5505/1787375989813.jpg</g:image_link>
+    <g:condition>new</g:condition>
+    <g:availability>in stock</g:availability>
+    <g:price>1199.00 BDT</g:price>
+    <g:brand>Showy</g:brand>
+    <g:google_product_category>sports</g:google_product_category>
+  </item>
+</channel>
+</rss>

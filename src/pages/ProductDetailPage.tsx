@@ -6,6 +6,7 @@ import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types';
 import * as api from '../lib/api';
 import type { ProductReview } from '../lib/api';
+import { trackViewContent, trackAddToCart } from '../lib/pixel';
 import { toast } from '../components/ui/Toast';
 
 interface ProductDetailPageProps {
@@ -27,7 +28,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const { t } = useLang();
   const [qty, setQty] = useState(1);
 
-  useEffect(() => { addRecentlyViewed(product.id); }, [product.id, addRecentlyViewed]);
+  useEffect(() => { addRecentlyViewed(product.id); trackViewContent(product.id, product.discount_price ?? product.price); }, [product.id, addRecentlyViewed, product.discount_price, product.price]);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
 
@@ -105,6 +106,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const handleAddToCart = () => {
     if (needsSelection || effectiveStock === 0) return;
     addToCart(product, qty, selectedVariant);
+    trackAddToCart(product.id, effectivePrice * qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };

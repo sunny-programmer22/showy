@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { User, Lock, MapPin, Moon, Sun, LogOut, Languages, Upload } from 'lucide-react';
+import { User, Lock, MapPin, Moon, Sun, LogOut, Languages, Upload, Gift, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useStore } from '../context/StoreContext';
 import { toast } from '../components/ui/Toast';
 import { useLang } from '../lib/i18n';
 
 const SettingsPage: React.FC = () => {
   const { lang, setLanguage: setLang } = useLang();
+  const { referralCode, loyaltyPoints } = useStore();
   const [userId, setUserId] = useState<string>('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -134,6 +136,16 @@ const SettingsPage: React.FC = () => {
             {dark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
         </div>
+      </section>
+
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-3">
+        <h2 className="flex items-center gap-2 font-extrabold text-slate-800 dark:text-slate-100"><Gift className="w-4 h-4" /> Refer &amp; Earn — Loyalty</h2>
+        <p className="text-xs text-slate-500 leading-relaxed">Share your code <span className="font-mono font-bold text-brand-600">{referralCode}</span> — friend gets ৳50 off first order, you earn ৳50 credit + 1% loyalty points on every paid order.</p>
+        <div className="flex gap-2">
+          <input readOnly value={`https://showy.jubair.bond/?ref=${referralCode}`} className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-mono dark:text-slate-200" />
+          <button onClick={() => { navigator.clipboard.writeText(`https://showy.jubair.bond/?ref=${referralCode}`); toast.success('Referral link copied'); }} className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold">Copy</button>
+        </div>
+        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5"><Star className="w-3.5 h-3.5 text-amber-500 fill-current" /> Loyalty Points: <span className="text-brand-600">{loyaltyPoints}</span> <span className="text-slate-400 font-normal"> (≈ ৳{loyaltyPoints} off next order)</span></p>
       </section>
 
       <button onClick={saveProfile} disabled={saving}
