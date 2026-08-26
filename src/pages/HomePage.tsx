@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import {
-  Store, ArrowRight, ShieldCheck, Sparkles, Truck, BadgePercent,
+  Store, ArrowRight, ShieldCheck, Sparkles,
   ShoppingBag, TrendingUp, LayoutDashboard, Flame, Clock
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -39,85 +39,69 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
   const activeShops = shops.filter((s) => s.is_active);
 
   return (
-    <div className="space-y-14 pb-16">
-      {/* ===== HERO with Sliding Posters ===== */}
-      <section className="relative bg-slate-950 overflow-hidden h-[520px] sm:h-[560px]">
-        <HeroCarousel />
-        {/* Ambient glow orbs */}
-        <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-brand-600/25 rounded-full blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-1/4 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
-          <div className="max-w-xl space-y-7">
-            <div className="animate-fade-up inline-flex items-center gap-2 px-3.5 py-1.5 glass-dark border border-white/15 rounded-full text-[11px] font-bold text-amber-300 shadow-soft">
-              <Sparkles className="w-3.5 h-3.5" />
-              Bangladesh's Multi-Vendor Marketplace
-            </div>
-
-            <h1 className="animate-fade-up delay-75 text-[2.6rem] leading-[1.05] sm:text-6xl font-extrabold text-white">
-              {t('heroTitle1')}
-              <span className="block text-gradient pb-1">{t('heroTitle2')}</span>
-            </h1>
-
-            <p className="animate-fade-up delay-150 text-sm sm:text-base text-slate-300 leading-relaxed">
-              {t('heroSub')}.
-            </p>
-
-            <div className="animate-fade-up delay-225 flex flex-wrap gap-3.5 pt-1">
-              <button onClick={() => onNavigate('products')}
-                className="btn-shine px-7 py-3.5 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 shadow-cta flex items-center gap-2 active:scale-95">
-                <ShoppingBag className="w-4 h-4" /> {t('startShopping')}
-              </button>
-              {userShop ? (
-                <button onClick={() => onNavigate('vendor-dashboard')}
-                  className="px-7 py-3.5 glass-dark border border-emerald-400/30 text-emerald-300 hover:text-white hover:border-emerald-300/60 font-extrabold text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 active:scale-95">
-                  <LayoutDashboard className="w-4 h-4" /> My Shop Panel
-                </button>
-              ) : (
-                <button onClick={() => onNavigate('create-shop')}
-                  className="px-7 py-3.5 glass-dark border border-white/25 text-white font-extrabold text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/60 flex items-center gap-2 active:scale-95">
-                  <Store className="w-4 h-4" /> Open Your Shop
-                </button>
-              )}
-            </div>
-
-            {/* Trust stats */}
-            <div className="animate-fade-up delay-300 flex items-center gap-7 pt-4 text-white/90">
-              {[
-                { value: `${activeShops.length}+`, label: 'Verified Shops' },
-                { value: `${products.length}+`, label: 'Products' },
-                { value: '64', label: 'Districts Served' }
-              ].map((s) => (
-                <div key={s.label}>
-                  <p className="text-2xl font-extrabold font-display">{s.value}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{s.label}</p>
+    <div className="space-y-8 pb-16">
+      {/* ===== HERO with Sliding Posters — original aspect, full image at top ===== */}
+      <section className="relative bg-slate-950 overflow-hidden">
+        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[46vh] sm:max-h-[480px]">
+          <HeroCarousel />
+          {/* Ambient glow orbs - subtle inside aspect wrapper */}
+          <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-brand-600/20 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 right-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl" />
+          {/* Content overlay */}
+          <div className="absolute inset-0 flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8 sm:py-12">
+              <div className="max-w-xl space-y-5 sm:space-y-7">
+                <div className="animate-fade-up inline-flex items-center gap-2 px-3.5 py-1.5 glass-dark border border-white/15 rounded-full text-[11px] font-bold text-amber-300 shadow-soft">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Bangladesh's Multi-Vendor Marketplace
                 </div>
-              ))}
+
+                <h1 className="animate-fade-up delay-75 text-[1.9rem] leading-[1.05] sm:text-5xl font-extrabold text-white">
+                  {t('heroTitle1')}
+                  <span className="block text-gradient pb-1">{t('heroTitle2')}</span>
+                </h1>
+
+                <p className="animate-fade-up delay-150 text-xs sm:text-base text-slate-300 leading-relaxed">
+                  {t('heroSub')}.
+                </p>
+
+                <div className="animate-fade-up delay-225 flex flex-wrap gap-3 pt-1">
+                  <button onClick={() => onNavigate('products')}
+                    className="btn-shine px-6 py-3 sm:px-7 sm:py-3.5 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 shadow-cta flex items-center gap-2 active:scale-95">
+                    <ShoppingBag className="w-4 h-4" /> {t('startShopping')}
+                  </button>
+                  {userShop ? (
+                    <button onClick={() => onNavigate('vendor-dashboard')}
+                      className="px-6 py-3 sm:px-7 sm:py-3.5 glass-dark border border-emerald-400/30 text-emerald-300 hover:text-white hover:border-emerald-300/60 font-extrabold text-xs sm:text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 active:scale-95">
+                      <LayoutDashboard className="w-4 h-4" /> My Shop Panel
+                    </button>
+                  ) : (
+                    <button onClick={() => onNavigate('create-shop')}
+                      className="px-6 py-3 sm:px-7 sm:py-3.5 glass-dark border border-white/25 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/60 flex items-center gap-2 active:scale-95">
+                      <Store className="w-4 h-4" /> Open Your Shop
+                    </button>
+                  )}
+                </div>
+
+                {/* Trust stats - compact on mobile */}
+                <div className="animate-fade-up delay-300 flex items-center gap-5 sm:gap-7 pt-2 text-white/90">
+                  {[
+                    { value: `${activeShops.length}+`, label: 'Verified Shops' },
+                    { value: `${products.length}+`, label: 'Products' },
+                    { value: '64', label: 'Districts Served' }
+                  ].map((s) => (
+                    <div key={s.label}>
+                      <p className="text-lg sm:text-2xl font-extrabold font-display">{s.value}</p>
+                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-bold">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Bottom fade into page background */}
-        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-slate-50/95 to-transparent" />
-      </section>
-
-      {/* ===== Feature strip ===== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { icon: Truck, title: 'Fast Delivery', desc: 'Standard & express options nationwide', color: 'bg-blue-50 text-blue-600' },
-            { icon: BadgePercent, title: 'Automated bKash / Nagad', desc: 'SMS OTP payment — zero manual steps', color: 'bg-bkash/10 text-bkash' },
-            { icon: ShieldCheck, title: 'Buyer Protection', desc: 'Verified merchants & genuine goods', color: 'bg-emerald-50 text-emerald-600' }
-          ].map((f) => (
-            <div key={f.title} className="bg-white/90 backdrop-blur rounded-2xl border border-slate-200/70 p-5 shadow-soft hover:shadow-lift hover:-translate-y-1 transition-all duration-300 flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${f.color} transition-transform duration-300 group-hover:scale-110`}><f.icon className="w-6 h-6" /></div>
-              <div>
-                <p className="font-extrabold text-slate-900 text-sm">{f.title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Subtle bottom fade */}
+        <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-slate-50/60 to-transparent pointer-events-none" />
       </section>
 
       {/* ===== Featured Products ===== */}
