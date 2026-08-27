@@ -141,7 +141,7 @@ export const useLang = () => {
     window.dispatchEvent(new Event(EVENT));
   }, []);
 
-  const t = useCallback((k: StringKey) => STRINGS[k][readLang()], [lang]);
+  const t = useCallback((k: StringKey) => (STRINGS as any)[k]?.[readLang()] || String(k), [lang]);
 
   return { lang, setLanguage, t, toggleLang: () => setLanguage(readLang() === 'en' ? 'bn' : 'en') };
 };

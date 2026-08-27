@@ -88,7 +88,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="space-y-2.5 text-xs">
               <NavLink label={t('browseProductsNav')} page="products" />
               <NavLink label={t('exploreVendorShops')} page="shops" />
-              {!userShop && <NavLink label={t('openYourStore')} page="create-shop" />}
+              {!userShop && <NavLink label={t('openYourShop')} page="create-shop" />}
               <NavLink label={t('myOrdersInvoices')} page="orders" />
             </ul>
           </div>
