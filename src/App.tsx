@@ -11,6 +11,7 @@ import { BottomNav } from './components/BottomNav';
 import { Product, Order } from './types';
 import { setSeo, setJsonLd, SITE_URL } from './lib/seo';
 import { initPixel } from './lib/pixel';
+import { initHilltop } from './lib/hilltop';
 import logo from './assets/logo.png';
 
 /* ------------------------- Code-split route chunks ------------------------ */
@@ -141,6 +142,8 @@ const Router: React.FC = () => {
     initPixel();
     const ref = new URLSearchParams(window.location.search).get('ref');
     if (ref) { localStorage.setItem('showy_referred_by', ref); }
+    const t = setTimeout(initHilltop, 2500);
+    return () => clearTimeout(t);
   }, []);
 
   const navigate = (target: string, extra?: any) => {
