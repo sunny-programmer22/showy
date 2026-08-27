@@ -411,6 +411,7 @@ const Router: React.FC = () => {
   return (
     /* Bottom padding clears the mobile bottom nav (+ iOS safe area) */
     <div className="min-h-screen flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] bg-slate-900 text-white px-4 py-2 rounded-lg">Skip to content</a>
       <Navbar
         onOpenCart={() => setCartOpen(true)}
         onNavigate={navigate}
@@ -420,7 +421,7 @@ const Router: React.FC = () => {
         <CategoryBar onSelectCategory={() => route.page === 'home' && navigate('products')} />
       )}
 
-      <main className="flex-1">
+      <main id="main" className="flex-1" tabIndex={-1}>
         <Suspense fallback={<PageLoader />}>
           {renderPage()}
         </Suspense>

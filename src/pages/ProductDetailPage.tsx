@@ -222,9 +222,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
           {/* Rating row */}
           <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center text-amber-400">
+            <div className="flex items-center text-amber-400" aria-label={`${product.rating} out of 5 stars`} role="img">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className={`w-4 h-4 ${i < Math.round(product.rating) ? 'fill-current' : 'text-slate-300 fill-none'}`} />
+                <Star key={i} className={`w-4 h-4 ${i < Math.round(product.rating) ? 'fill-current' : 'text-slate-300 fill-none'}`} aria-hidden="true" />
               ))}
             </div>
             <span className="font-bold text-slate-800">{product.rating}</span>
@@ -238,7 +238,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 Select {productVariants[0]?.option_name ?? 'Size'}
                 <span aria-hidden="true" className="text-rose-500"> *</span>
               </p>
-              <div className="flex flex-wrap gap-2" role="group" aria-label={`Choose ${productVariants[0]?.option_name ?? 'size'}`}>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={`Choose ${productVariants[0]?.option_name ?? 'size'}`} aria-required="true" aria-describedby={needsSelection ? "variant-help" : undefined}>
                 {productVariants.map((v) => {
                   const out = v.stock === 0;
                   const active = selectedVariantId === v.id;
@@ -246,9 +246,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <button
                       key={v.id}
                       type="button"
+                      role="radio"
+                      aria-checked={active}
                       onClick={() => setSelectedVariantId(v.id)}
                       disabled={out}
-                      aria-pressed={active}
                       aria-label={`${v.option_value}${out ? ', out of stock' : ''}`}
                       className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${
                         out
@@ -269,7 +270,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 })}
               </div>
               {needsSelection && (
-                <p className="text-[11px] font-semibold text-amber-600">Please choose an option before adding to cart.</p>
+                <p id="variant-help" role="alert" className="text-[11px] font-semibold text-amber-600">Please choose an option before adding to cart.</p>
               )}
             </div>
           )}
@@ -293,9 +294,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
               {effectiveStock > 0 ? (
                 effectiveStock <= 5
-                  ? <><span className="text-amber-600 font-bold">⚠ Only {effectiveStock} left!</span> order fast</>
-                  : <>✓ In stock ({effectiveStock} units available)</>
-              ) : <span className="text-rose-600 font-bold">✗ Out of Stock</span>}
+                  ? <><span aria-hidden="true" className="text-amber-600 font-bold">⚠ Only {effectiveStock} left!</span><span className="sr-only">Only {effectiveStock} left in stock</span> order fast</>
+                  : <><span aria-hidden="true">✓</span> In stock ({effectiveStock} units available)</>
+              ) : <span className="text-rose-600 font-bold"><span aria-hidden="true">✗</span> Out of Stock</span>}
             </p>
           </div>
 
@@ -303,11 +304,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="flex items-center gap-3">
             <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden">
               <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Decrease quantity" className="p-3 hover:bg-slate-50 transition"><Minus className="w-4 h-4" /></button>
-              <span className="px-5 py-3 font-bold text-sm border-x border-slate-200">{qty}</span>
+              <span aria-live="polite" aria-label={`Quantity: ${qty}`} className="px-5 py-3 font-bold text-sm border-x border-slate-200">{qty}</span>
               <button onClick={() => setQty(Math.min(effectiveStock, qty + 1))} disabled={qty >= effectiveStock}
                 aria-label="Increase quantity" className="p-3 hover:bg-slate-50 transition disabled:opacity-30"><Plus className="w-4 h-4" /></button>
             </div>
-            <button onClick={handleAddToCart} disabled={needsSelection || effectiveStock === 0}
+            <button onClick={handleAddToCart} disabled={needsSelection || effectiveStock === 0} aria-describedby={needsSelection ? "variant-help" : undefined}
               className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-md ${
                 added ? 'bg-emerald-600 shadow-emerald-100'
                   : needsSelection || effectiveStock === 0 ? 'bg-slate-300 cursor-not-allowed'

@@ -147,7 +147,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }`}
             title={product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
           >
-            <ShoppingCart className={`w-4 h-4 ${added ? 'animate-bounce' : ''}`} />
+            <ShoppingCart className={`w-4 h-4 ${added ? 'animate-pulse' : ''}`} />
           </button>
         </div>
       </div>

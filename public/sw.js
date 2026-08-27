@@ -1,5 +1,5 @@
-const CACHE = 'showy-v1';
-const PRECACHE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'showy-v2';
+const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -15,6 +15,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -27,10 +31,10 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('./index.html', copy));
+          caches.open(CACHE).then((c) => c.put(req, copy));
           return res;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
@@ -45,7 +49,7 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE).then((c) => c.put(req, copy));
           }
           return res;
-        })
+        }).catch(() => hit)
     )
   );
 });

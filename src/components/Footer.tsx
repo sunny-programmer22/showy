@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { ShoppingBag, ShieldCheck, Truck, Lock, Percent, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useLang } from '../lib/i18n';
 
 interface FooterProps {
   onNavigate?: (page: string) => void;
@@ -8,6 +9,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const { currentUser, shops } = useStore();
+  const { t } = useLang();
   const userShop = currentUser ? shops.find((s) => s.owner_id === currentUser.id) : null;
 
   const go = (page: string) => () => {
@@ -39,10 +41,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Value Proposition Highlights */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pb-12 border-b border-white/5 text-xs">
           {[
-            { icon: Truck, tint: 'bg-brand-500/10 text-brand-400', title: 'Fast Nationwide Delivery', desc: 'Coverage across all 64 districts in Bangladesh' },
-            { icon: ShieldCheck, tint: 'bg-emerald-500/10 text-emerald-400', title: '100% Genuine Guarantee', desc: 'Verified shops & direct official imports' },
-            { icon: Percent, tint: 'bg-purple-500/10 text-purple-400', title: 'Best Prices Guaranteed', desc: 'Fair deals from verified sellers nationwide' },
-            { icon: Lock, tint: 'bg-amber-500/10 text-amber-400', title: 'Automated bKash / Nagad', desc: 'Instant OTP payment verification engine' }
+            { icon: Truck, tint: 'bg-brand-500/10 text-brand-400', title: t('fastDelivery'), desc: 'Coverage across all 64 districts in Bangladesh' },
+            { icon: ShieldCheck, tint: 'bg-emerald-500/10 text-emerald-400', title: t('genuineGuarantee'), desc: 'Verified shops & direct official imports' },
+            { icon: Percent, tint: 'bg-purple-500/10 text-purple-400', title: t('bestPrices'), desc: 'Fair deals from verified sellers nationwide' },
+            { icon: Lock, tint: 'bg-amber-500/10 text-amber-400', title: t('securePayment'), desc: 'Instant OTP payment verification engine' }
           ].map((f) => (
             <div key={f.title} className="flex items-start space-x-3 group">
               <div className={`p-3 ${f.tint} rounded-xl transition-transform duration-300 group-hover:-translate-y-0.5`}>
@@ -82,37 +84,37 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           <div>
-            <h4 className="font-bold text-white text-sm mb-4">Quick Links</h4>
+            <h4 className="font-bold text-white text-sm mb-4">{t('quickLinks')}</h4>
             <ul className="space-y-2.5 text-xs">
-              <NavLink label="Browse Products" page="products" />
-              <NavLink label="Explore Vendor Shops" page="shops" />
-              {!userShop && <NavLink label="Open Your Store" page="create-shop" />}
-              <NavLink label="My Orders & Invoices" page="orders" />
+              <NavLink label={t('browseProductsNav')} page="products" />
+              <NavLink label={t('exploreVendorShops')} page="shops" />
+              {!userShop && <NavLink label={t('openYourStore')} page="create-shop" />}
+              <NavLink label={t('myOrdersInvoices')} page="orders" />
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold text-white text-sm mb-4">For Shop Owners</h4>
+            <h4 className="font-bold text-white text-sm mb-4">{t('forShopOwners')}</h4>
             <ul className="space-y-2.5 text-xs">
-              <NavLink label="Vendor Dashboard" page="vendor-dashboard" />
-              {!userShop && <NavLink label="Create Your Shop" page="create-shop" />}
-              {userShop && <NavLink label="Upload New Product" page="upload-product" />}
+              <NavLink label={t('vendorDashboard')} page="vendor-dashboard" />
+              {!userShop && <NavLink label={t('createYourShop')} page="create-shop" />}
+              {userShop && <NavLink label={t('uploadNewProduct')} page="upload-product" />}
               <li><span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold"><Percent className="w-3.5 h-3.5" />Transparent Payouts</span></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold text-white text-sm mb-4">Support</h4>
+            <h4 className="font-bold text-white text-sm mb-4">{t('support')}</h4>
             <ul className="space-y-2.5 text-xs">
-              <NavLink label="About Showy" page="about" />
-              <NavLink label="Contact Us" page="contact" />
+              <NavLink label={t('aboutShowy')} page="about" />
+              <NavLink label={t('contactUs')} page="contact" />
               <NavLink label="FAQ" page="faq" />
-              <NavLink label="Buying Guides" page="guides" />
+              <NavLink label={t('buyingGuides')} page="guides" />
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold text-white text-sm mb-4">About the Platform</h4>
+            <h4 className="font-bold text-white text-sm mb-4">{t('aboutPlatform')}</h4>
             <p className="text-xs text-slate-500 leading-relaxed mb-3">
               A trusted multi-vendor marketplace connecting verified merchants with buyers across Bangladesh.
             </p>

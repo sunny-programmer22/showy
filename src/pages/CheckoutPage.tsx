@@ -169,111 +169,109 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         {/* Left: Forms */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Delivery Address */}
-          <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h2 className="font-extrabold text-slate-900 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-brand-600" /> Delivery Address
+          {/* Delivery Address — native form for a11y + autocomplete */}
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4" aria-labelledby="delivery-heading">
+            <h2 id="delivery-heading" className="font-extrabold text-slate-900 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-brand-600" aria-hidden="true" /> Delivery Address
             </h2>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className={labelCls}>Full Name *</label>
-                <input type="text" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Tanvir Ahmed" className={inputCls} />
+                <label htmlFor="shipping-fullName" className={labelCls}>Full Name *</label>
+                <input id="shipping-fullName" name="fullName" autoComplete="name" required aria-required="true" type="text" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Tanvir Ahmed" className={inputCls} />
               </div>
               <div className="space-y-1">
-                <label className={labelCls}>Phone Number *</label>
-                <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="01XXXXXXXXX" className={inputCls} />
+                <label htmlFor="shipping-phone" className={labelCls}>Phone Number *</label>
+                <input id="shipping-phone" name="phone" autoComplete="tel" required aria-required="true" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="01XXXXXXXXX" className={inputCls} />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className={labelCls}>Email</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" className={inputCls} />
+              <label htmlFor="shipping-email" className={labelCls}>Email</label>
+              <input id="shipping-email" name="email" autoComplete="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" className={inputCls} />
             </div>
 
             <div className="space-y-1">
-              <label className={labelCls}>Full Address *</label>
-              <textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
+              <label htmlFor="shipping-address" className={labelCls}>Full Address *</label>
+              <textarea id="shipping-address" name="address" autoComplete="street-address" required aria-required="true" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
                 placeholder="House / Road / Area..." className={`${inputCls} resize-none`} />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1 col-span-2">
-                <label className={labelCls}>City *</label>
-                <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Dhaka" className={inputCls} />
+                <label htmlFor="shipping-city" className={labelCls}>City *</label>
+                <input id="shipping-city" name="city" autoComplete="address-level2" required aria-required="true" type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Dhaka" className={inputCls} />
               </div>
               <div className="space-y-1">
-                <label className={labelCls}>Postal Code</label>
-                <input type="text" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} placeholder="1213" className={inputCls} />
+                <label htmlFor="shipping-postal" className={labelCls}>Postal Code</label>
+                <input id="shipping-postal" name="postalCode" autoComplete="postal-code" type="text" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} placeholder="1213" className={inputCls} />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className={labelCls}>Delivery Note (optional)</label>
-              <input type="text" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}
+              <label htmlFor="shipping-note" className={labelCls}>Delivery Note (optional)</label>
+              <input id="shipping-note" name="note" autoComplete="off" type="text" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}
                 placeholder="e.g. Call before delivery" className={inputCls} />
             </div>
           </section>
 
-          {/* Shipping Method */}
-          <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
-            <h2 className="font-extrabold text-slate-900 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-brand-600" /> Delivery Speed
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setShippingMethod('standard')}
+          {/* Shipping Method — fieldset radiogroup */}
+          <fieldset className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+            <legend className="font-extrabold text-slate-900 flex items-center gap-2 px-1">
+              <Truck className="w-5 h-5 text-brand-600" aria-hidden="true" /> Delivery Speed
+            </legend>
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Delivery Speed">
+              <button type="button" role="radio" aria-checked={shippingMethod === 'standard'} onClick={() => setShippingMethod('standard')}
                 className={`p-4 rounded-xl border-2 text-left transition ${shippingMethod === 'standard' ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}>
                 <p className="font-extrabold text-sm text-slate-800">Standard</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">3–5 business days {form.city ? (isDhaka ? '· Dhaka' : '· Outside Dhaka') : ''}</p>
                 <p className="font-extrabold text-sm text-brand-700 mt-1">{cartTotal > 5000 ? 'FREE' : `৳${zoneFee}`}</p>
               </button>
-              <button onClick={() => setShippingMethod('express')}
+              <button type="button" role="radio" aria-checked={shippingMethod === 'express'} onClick={() => setShippingMethod('express')}
                 className={`p-4 rounded-xl border-2 text-left transition ${shippingMethod === 'express' ? 'border-brand-600 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}>
-                <p className="font-extrabold text-sm text-slate-800">Express âš¡</p>
+                <p className="font-extrabold text-sm text-slate-800">Express ⚡</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">24–48 hours</p>
                 <p className="font-extrabold text-sm text-brand-700 mt-1">৳150</p>
               </button>
             </div>
-          </section>
+          </fieldset>
 
-          {/* Payment Methods */}
-          <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
-            <h2 className="font-extrabold text-slate-900 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-brand-600" /> Payment Method
-            </h2>
+          {/* Payment Methods — fieldset radiogroup */}
+          <fieldset className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+            <legend className="font-extrabold text-slate-900 flex items-center gap-2 px-1">
+              <CreditCard className="w-5 h-5 text-brand-600" aria-hidden="true" /> Payment Method
+            </legend>
             <p className="text-[11px] text-slate-500 -mt-1">Automated OTP verification — no manual transaction needed!</p>
 
-            <div className="space-y-2.5">
-              <button onClick={() => handlePaymentSelect('bkash')}
-                className="w-full flex items-center justify-between p-4 rounded-xl border-2 transition group
-                  border-slate-200 hover:border-bkash hover:bg-bkash/5">
+            <div className="space-y-2.5" role="radiogroup" aria-label="Payment Method">
+              <button type="button" role="radio" aria-checked={paymentMethod === 'bkash'} onClick={() => handlePaymentSelect('bkash')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition group ${paymentMethod === 'bkash' ? 'border-bkash bg-bkash/5' : 'border-slate-200 hover:border-bkash hover:bg-bkash/5'}`}>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1.5 bg-bkash text-white text-xs font-extrabold rounded-lg">bKash</span>
+                  <span className="px-3 py-1.5 bg-bkash text-white text-xs font-extrabold rounded-lg" aria-hidden="true">bKash</span>
                   <span className="text-left">
                     <span className="block text-sm font-bold text-slate-800">Pay with bKash</span>
-                    <span className="block text-[11px] text-slate-500">SMS OTP â†’ PIN â†’ Instant payment</span>
+                    <span className="block text-[11px] text-slate-500">SMS OTP → PIN → Instant payment</span>
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-bkash" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-bkash" aria-hidden="true" />
               </button>
 
-              <button onClick={() => handlePaymentSelect('nagad')}
-                className="w-full flex items-center justify-between p-4 rounded-xl border-2 transition group
-                  border-slate-200 hover:border-nagad hover:bg-nagad/5">
+              <button type="button" role="radio" aria-checked={paymentMethod === 'nagad'} onClick={() => handlePaymentSelect('nagad')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition group ${paymentMethod === 'nagad' ? 'border-nagad bg-nagad/5' : 'border-slate-200 hover:border-nagad hover:bg-nagad/5'}`}>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1.5 bg-nagad text-white text-xs font-extrabold rounded-lg">Nagad</span>
+                  <span className="px-3 py-1.5 bg-nagad text-white text-xs font-extrabold rounded-lg" aria-hidden="true">Nagad</span>
                   <span className="text-left">
                     <span className="block text-sm font-bold text-slate-800">Pay with Nagad</span>
-                    <span className="block text-[11px] text-slate-500">SMS OTP â†’ PIN â†’ Instant payment</span>
+                    <span className="block text-[11px] text-slate-500">SMS OTP → PIN → Instant payment</span>
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-nagad" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-nagad" aria-hidden="true" />
               </button>
 
-              <button disabled
+              <button disabled aria-disabled="true"
                 className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-dashed border-slate-200 opacity-60 cursor-not-allowed">
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-extrabold rounded-lg">VISA</span>
+                  <span className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-extrabold rounded-lg" aria-hidden="true">VISA</span>
                   <span className="text-left">
                     <span className="block text-sm font-bold text-slate-800">Debit / Credit Card</span>
                     <span className="block text-[11px] text-slate-400">Coming soon via SSLCommerz</span>
@@ -281,19 +279,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderPlace
                 </div>
               </button>
 
-              <button onClick={() => handlePaymentSelect('cod')}
-                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition group">
+              <button type="button" role="radio" aria-checked={paymentMethod === 'cod'} onClick={() => handlePaymentSelect('cod')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition group ${paymentMethod === 'cod' ? 'border-emerald-500 bg-emerald-50/40' : 'border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40'}`}>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-extrabold rounded-lg">COD</span>
+                  <span className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-extrabold rounded-lg" aria-hidden="true">COD</span>
                   <span className="text-left">
                     <span className="block text-sm font-bold text-slate-800">Cash on Delivery</span>
                     <span className="block text-[11px] text-slate-500">Pay when you receive the parcel</span>
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600" aria-hidden="true" />
               </button>
             </div>
-          </section>
+          </fieldset>
         </div>
 
         {/* Right: Summary */}

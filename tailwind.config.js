@@ -32,6 +32,15 @@ export default {
         glow: '0 0 0 1px rgb(2 132 199 / 0.10), 0 12px 32px -8px rgb(2 132 199 / 0.25)',
         cta: '0 8px 24px -8px rgb(2 132 199 / 0.55)',
       },
+      borderRadius: {
+        xl: '0.75rem',
+        '2xl': '1rem',
+        '3xl': '1.5rem',
+      },
+      fontSize: {
+        '2xs': ['0.625rem', { lineHeight: '0.875rem', letterSpacing: '0.02em' }],
+        '3xs': ['0.6875rem', { lineHeight: '0.875rem' }],
+      },
       keyframes: {
         'fade-up': {
           '0%': { opacity: '0', transform: 'translateY(14px)' },

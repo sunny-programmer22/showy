@@ -90,6 +90,36 @@ export const STRINGS: Dict = {
   qaTitle: { en: 'Questions & Answers', bn: 'প্রশ্ন ও উত্তর' },
   askQuestion: { en: 'Ask a question', bn: 'প্রশ্ন করুন' },
   helpful: { en: 'Helpful', bn: 'সহায়ক' },
+
+  /* Footer */
+  quickLinks: { en: 'Quick Links', bn: 'দ্রুত লিঙ্ক' },
+  exploreVendorShops: { en: 'Explore Vendor Shops', bn: 'ভেন্ডর শপ দেখুন' },
+  forShopOwners: { en: 'For Shop Owners', bn: 'শপ মালিকদের জন্য' },
+  support: { en: 'Support', bn: 'সাপোর্ট' },
+  aboutPlatform: { en: 'About the Platform', bn: 'প্ল্যাটফর্ম সম্পর্কে' },
+  fastDelivery: { en: 'Fast Nationwide Delivery', bn: 'দ্রুত সারাদেশে ডেলিভারি' },
+  genuineGuarantee: { en: '100% Genuine Guarantee', bn: '১০০% আসল গ্যারান্টি' },
+  bestPrices: { en: 'Best Prices Guaranteed', bn: 'সেরা দাম গ্যারান্টি' },
+  securePayment: { en: 'Automated bKash / Nagad', bn: 'অটোমেটেড bKash / Nagad' },
+  browseProductsNav: { en: 'Browse Products', bn: 'পণ্য দেখুন' },
+  myOrdersInvoices: { en: 'My Orders & Invoices', bn: 'আমার অর্ডার ও ইনভয়েস' },
+  vendorDashboard: { en: 'Vendor Dashboard', bn: 'ভেন্ডর ড্যাশবোর্ড' },
+  createYourShop: { en: 'Create Your Shop', bn: 'আপনার শপ তৈরি করুন' },
+  uploadNewProduct: { en: 'Upload New Product', bn: 'নতুন পণ্য আপলোড' },
+  aboutShowy: { en: 'About Showy', bn: 'Showy সম্পর্কে' },
+  contactUs: { en: 'Contact Us', bn: 'যোগাযোগ করুন' },
+  buyingGuides: { en: 'Buying Guides', bn: 'কেনার গাইড' },
+
+  /* Home extras */
+  handPicked: { en: 'Hand-picked highlights from our marketplace', bn: 'আমাদের মার্কেটপ্লেসের বাছাইকৃত হাইলাইট' },
+  vendorCtaTitle: { en: 'Have something to sell?', bn: 'কিছু বিক্রি করতে চান?' },
+  vendorCtaDesc: { en: 'Join hundreds of independent sellers. Upload products, track orders live, and withdraw earnings to bKash/Nagad anytime — your money, your rules.', bn: 'শত শত স্বাধীন বিক্রেতার সাথে যোগ দিন। পণ্য আপলোড করুন, লাইভ অর্ডার ট্র্যাক করুন।' },
+
+  /* Checkout */
+  deliveryAddress: { en: 'Delivery Address', bn: 'ডেলিভারি ঠিকানা' },
+  deliverySpeed: { en: 'Delivery Speed', bn: 'ডেলিভারি গতি' },
+  paymentMethod: { en: 'Payment Method', bn: 'পেমেন্ট পদ্ধতি' },
+  orderSummary: { en: 'Order Summary', bn: 'অর্ডার সারাংশ' },
 };
 
 export type StringKey = keyof typeof STRINGS;
