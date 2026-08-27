@@ -1,5 +1,5 @@
 let loaded = false;
-const ZONES = ['hilltop_7353953.js', 'hilltop_7356389.js', 'hilltop_7356401.js'];
+const ZONES = ['hilltop_7356389.js', 'hilltop_7356401.js'];
 export const initHilltop = () => {
   if (typeof window === 'undefined' || loaded) return;
   const host = window.location.hostname;
@@ -17,5 +17,5 @@ export const initHilltop = () => {
     document.head.appendChild(s);
   });
   loaded = true;
-  console.log('HilltopAds zones loaded:', ZONES.join(', '));
+  console.log('HilltopAds in-page zones loaded:', ZONES.join(', '));
 };
