@@ -42,7 +42,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
     <div className="space-y-8 pb-16">
       {/* ===== HERO with Sliding Posters — original aspect, full image at top ===== */}
       <section className="relative bg-slate-950 overflow-hidden">
-        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[46vh] sm:max-h-[480px]">
+        <div className="relative w-full aspect-[16/9] max-h-[42vh] sm:aspect-[21/9] sm:max-h-[440px]">
           <HeroCarousel />
           {/* Ambient glow orbs - subtle inside aspect wrapper */}
           <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-brand-600/20 rounded-full blur-3xl" />

@@ -111,8 +111,8 @@ const HeroCarousel: React.FC = () => {
       >
         {extended.map((s, i) => (
           <div key={`${s.id}-${i}`} className="relative w-full h-full shrink-0 bg-slate-950" style={!s.image_url ? { background: GRADS[i % GRADS.length] } : undefined}>
-            {s.image_url && <img src={s.image_url} alt="" className="absolute inset-0 w-full h-full object-contain" loading={i === 0 ? 'eager' : 'lazy'} />}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+            {s.image_url && <img src={s.image_url} alt="" className="absolute inset-0 w-full h-full object-contain sm:object-cover" loading={i === 0 ? 'eager' : 'lazy'} />}
+            <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-black/75 via-black/30 to-transparent sm:from-black/60 sm:via-black/20 pointer-events-none" />
             <div className="absolute bottom-6 left-4 sm:left-8 max-w-md">
               <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-amber-300 mb-1">
                 <Sparkles className="w-3 h-3" /> Showy Store
