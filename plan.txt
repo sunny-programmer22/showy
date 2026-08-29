@@ -1,240 +1,516 @@
 ================================================================================
-          MULTI-VENDOR E-COMMERCE PLATFORM - SYSTEM ARCHITECTURE & PLAN
+  SHOWY — MULTI-VENDOR E-COMMERCE PLATFORM — COMPLETE FEATURES & CURRENT STATE
+  Last Updated: 27 Aug 2026 | Live: https://showy.jubair.bond | Repo: sunny-programmer22/showy
+  Stack: React 18 + TypeScript + Vite 8 + Tailwind CSS 3 + Supabase + GitHub Pages
 ================================================================================
-Hosting Target: GitHub Pages (Client-side Single Page Application)
-Backend / BaaS: Supabase (PostgreSQL, Auth, Storage, Realtime, Row Level Security)
-Frontend Tech: React 18 / TypeScript, Vite, Tailwind CSS, Lucide Icons, Canvas-Confetti
+
+EXECUTIVE SUMMARY
+-----------------
+Showy (branded "Showy Store" for SEO — showy store / showy store bd) is a full-featured,
+Bangladesh-focused multi-vendor marketplace where anyone can launch a digital storefront
+in minutes. Customers buy from verified shops (jerseys, fashion, gadgets, home, etc.) and
+pay via bKash/Nagad OTP, card, or Cash on Delivery (COD) with nationwide delivery (64
+districts). The platform automatically splits revenue: 5% platform commission, 95% to
+vendors, with vendor wallets and payout workflows. The entire app is a SPA hosted on
+GitHub Pages, powered directly by Supabase (Auth, Postgres + RLS, Storage, Realtime)
+with a hybrid local/demo fallback when Supabase is not configured.
+
+Current live build: index-CRyR7psI.js (premium UI, 50fd343+), PWA enabled, dark mode,
+HilltopAds MULTITAG BANNER zones 7356389 + 7356401 (APPROVED, deferred), verification
+file 0bc71d78ff5d9b68b9fd.txt, merchant feed, SEO + sitemap + 404 fallback.
 
 --------------------------------------------------------------------------------
-1. ARCHITECTURE OVERVIEW (SERVERLESS / SUPABASE ON GITHUB PAGES)
+1. HOSTING & DEPLOYMENT
 --------------------------------------------------------------------------------
-Since GitHub Pages hosts static web assets without a custom Node.js server runtime:
-- The entire application runs as a responsive, high-performance SPA using React & TypeScript.
-- Data persistence, relational querying, and file storage are powered directly by Supabase:
-  * Supabase Auth: User sign-up, email/phone login, JWT session management.
-  * Supabase PostgreSQL Database: Relational schema with Row Level Security (RLS).
-  * Supabase Storage: Product images, shop logos, and vendor banners.
-  * Realtime Subscriptions: Instant order status updates and notifications.
-- Client-side Hybrid Store: Seamlessly works with Supabase credentials or switches to a local persistence store for immediate offline/local demonstration with rich initial seed data.
-
---------------------------------------------------------------------------------
-2. USER ROLES & ACCESS CONTROL
---------------------------------------------------------------------------------
-1. Super Admin (Platform Owner):
-   - Oversees the entire multi-vendor marketplace.
-   - Collects 5% automated platform commission from all 3rd-party vendor sales.
-   - Manages and creates the official Platform Flagship Store (exempt from commission cut).
-   - Super Admin Panel: Platform GMV, total commission wallet, vendor approval, shop status toggles, user management, and payout disbursement approvals.
-
-2. Vendor / Shop Owner:
-   - Any registered user can launch their own custom shop via the "Open a Shop" wizard.
-   - Dedicated Vendor Management Dashboard:
-     * Product inventory management (Add, Edit, Delete, Stock track).
-     * Order fulfillment pipeline (Mark as Processing, Shipped, Delivered).
-     * Financial Ledger: Gross revenue, 5% admin fee deducted, 95% net earnings wallet.
-     * Payout withdrawal requests (to bKash, Nagad, Bank).
-     * Shop profile customization (logo, banner, description, contact details).
-
-3. Customer:
-   - Browse all products across different shops or visit dedicated shop storefronts.
-   - Global Search and Multi-Faceted filtering (category, price slider, shop, rating, in-stock).
-   - Multi-vendor unified shopping cart and multi-step checkout.
-   - Automated bKash & Nagad OTP payment simulation & Gateway connection.
-   - Interactive Live Order Tracking timeline and downloadable PDF/Printable Invoices.
-   - Product reviews and ratings with verified purchase tags.
+- GitHub Pages (static SPA) via .github/workflows/deploy.yml:31
+  * Build: npm run build (Vite) with env VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY,
+    VITE_BKASH_ENABLED
+  * Generate crawlable pages + dynamic sitemap: node scripts/generate-pages.mjs (creates
+    /products/index.html, /product/<id>/, /shop/<id>/, sitemap.xml from live Supabase)
+  * Generate merchant feed: node scripts/generate-feed.mjs → dist/merchant-feed.xml +
+    public/merchant-feed.xml (Google Merchant, 200 products, g:price in BDT)
+  * SPA fallback: cp dist/index.html dist/404.html for deep links
+  * Upload artifact → deploy-pages@v4
+  * Recent fix: make feed resilient + continue-on-error (c91cbdd)
+- Custom domain: showy.jubair.bond (CNAME), HTTPS, canonical, robots.txt, sw.js v2
+- Base: "/" (Vite base: '/'), real-path routing via pathForRoute / routeFromLocation
+  in src/App.tsx:79,129 with KNOWN_PAGES, popstate handling, per-route SEO.
 
 --------------------------------------------------------------------------------
-3. CORE MODULES & WORKFLOW SPECIFICATION
+2. TECH STACK
 --------------------------------------------------------------------------------
-
-[MODULE 1: SHOP & VENDOR MANAGEMENT]
-- Public Storefronts (`#/shop/:shopId` or `/shop/:slug`):
-  * Shop header with banner, logo, verified badge, rating score, and bio.
-  * Shop-specific product catalog with dedicated search and filter.
-- Shop Creation Wizard:
-  * Shop Name, Slug, Logo URL/Upload, Banner, Category focus, Phone/Email.
-  * Automatic assignment of owner ID to the logged-in user.
-- Admin First Shop:
-  * The platform creator's flagship store is seeded or can be initialized by admin.
-  * Flagship products are marked with 0% platform fee (100% earnings retained).
-
-[MODULE 2: PRODUCT CATALOG, SEARCH & MULTI-FACET FILTERING]
-- Advanced Search Engine:
-  * Live instant search bar with autocomplete suggestions for products and shops.
-- Dynamic Filter Sidebar:
-  * Category and Sub-category hierarchy.
-  * Dynamic Dual-handle Price Range slider.
-  * Filter by Specific Shop / Vendor.
-  * Filter by Customer Rating (4+ stars, 3+ stars).
-  * Filter by Stock Availability and Discounted deals.
-  * Sorting options (Popularity, Price Low to High, Price High to Low, Newest, Top Rated).
-- Product Details Page:
-  * Multi-image interactive gallery with zoom.
-  * Variant selectors (Size, Color, Edition).
-  * Stock counter and badge (e.g., "Only 3 left!").
-  * Shop info card with link to vendor storefront.
-  * Related products from the same shop and category.
-  * Customer reviews and star breakdown.
-
-[MODULE 3: PRODUCT UPLOAD & MANAGEMENT PAGE]
-- Accessible directly from Vendor Dashboard or dedicated "/upload-product" route:
-  * Basic Info: Title, Slug, Category, Description (markdown / rich text).
-  * Pricing: Regular Price, Discounted Sale Price, SKU.
-  * Media: Image uploader with file drop zone and preview thumbnails.
-  * Variants: Add custom sizes, colors, and specific variant inventory.
-  * Inventory: Stock quantity, Low stock warning threshold.
-  * Shop association: Automatically links to active vendor shop.
-
-[MODULE 4: MULTI-VENDOR CART & CHECKOUT]
-- Smart Cart:
-  * Items clearly grouped by Shop.
-  * Quantity increment/decrement with real-time stock limits.
-  * Subtotal, estimated shipping, and voucher/coupon application.
-- Multi-Step Checkout:
-  * Step 1: Customer & Delivery Information (Name, Phone, Address, City, Postal Code).
-  * Step 2: Shipping Method Selection (Standard, Express).
-  * Step 3: Payment Method Selection (bKash, Nagad, Card, Cash on Delivery).
-  * Step 4: Review & Final Payment Execution.
-
-[MODULE 5: AUTOMATED BKASH & NAGAD PAYMENT WITH OTP]
-- Interactive PGW (Payment Gateway) Simulation & Live Integration Engine:
-  * When bKash / Nagad is selected, opens the secure branded gateway interface.
-  * Step A: User confirms mobile wallet number (e.g., 017xxxxxxxx).
-  * Step B: Gateway sends automated 6-digit OTP code to the screen / SMS simulator.
-  * Step C: User enters the 6-digit verification code.
-  * Step D: User inputs wallet PIN to authenticate transaction securely.
-  * Step E: Instant verification callback returns unique Transaction ID (TrxID) and marks order as `PAID`.
-
-[MODULE 6: 5% AUTOMATED PLATFORM PROFIT / COMMISSION SPLIT]
-- Real-time Ledger Allocation:
-  * On every successfully paid order item:
-    - If Shop == Admin Store:
-        Platform Admin Profit = 100% of item revenue
-        Vendor Balance = N/A
-    - If Shop != Admin Store (3rd-party Vendor):
-        Platform Admin Profit = 5% of item gross amount
-        Vendor Net Balance = 95% of item gross amount
-- Transparent Accounting:
-  * Admin sees total platform revenue broken down into Gross Volume vs 5% Net Cut.
-  * Vendor dashboard displays exact breakdown per order (Total Sale, -5% Platform Fee, Net Receivable).
-  * Vendor payout ledger allows vendors to withdraw accumulated 95% funds to their bKash/Nagad/Bank account with status tracking (Pending -> Approved -> Transferred).
-
-[MODULE 7: ORDER MANAGEMENT, TRACKING & INVOICING]
-- Order Status Lifecycle:
-  [PENDING] -> [PAID / PROCESSING] -> [SHIPPED] -> [DELIVERED] -> [COMPLETED]
-- Customer Order Tracking:
-  * Interactive tracking timeline with timestamps and step-by-step progress.
-  * Delivery updates and courier tracking info.
-- Order Confirmation & Invoice:
-  * Instant celebratory confirmation page with confetti.
-  * Printable & downloadable digital invoice with Order ID, customer info, itemized table, shop breakdown, payment method, and TrxID.
-
-[MODULE 8: DUAL CONTROL PANELS (ADMIN & VENDOR)]
-1. Super Admin Panel:
-   - System KPIs: Gross Marketplace Volume (GMV), 5% Admin Profit Collected, Total Orders, Active Vendors.
-   - Vendor Management: List all registered stores, approve/reject shops, toggle active status.
-   - Global Orders: Monitor all customer transactions and status across all shops.
-   - Commission & Payouts: View vendor balance withdrawals and approve payouts.
-   - Flagship Shop Management: Add and edit products directly for the platform's own store.
-
-2. Vendor Dashboard:
-   - Performance Metrics: Total Sales, 95% Net Earnings, Active Products, Pending Orders.
-   - Product Catalog: Add, edit, manage stock, toggle visibility.
-   - Order Processing: Update order delivery stage (Packed, Shipped, Delivered).
-   - Wallet & Payouts: Request cashout to bKash/Nagad, view payout history.
-   - Shop Settings: Update store branding, contact info, and policies.
+- Frontend: React 18, TypeScript, Vite 8.2.2, Tailwind CSS 3 (brand sky #0284c7,
+  bkash #e2136e, nagad #f7921e), Lucide Icons, canvas-confetti, Sonner-like Toast
+- Backend: Supabase (Postgres, Auth, Storage bucket 'media' public, RLS, Realtime,
+  Edge Functions stub for emails)
+- State: React Context StoreProvider (src/context/StoreContext.tsx:1) — hybrid:
+  LIVE (isSupabaseConfigured) → fetches via src/lib/api.ts; else localStorage
+  (shoptastic_* keys) with INITIAL_* seed data from src/data/mockData.ts
+- i18n: src/lib/i18n.ts:9 — Lang 'en'|'bn', 115+ keys, localStorage showy_lang,
+  toggle EN/বাং in Navbar, persisted, used in Home, ProductDetail, Cart, etc.
+- PWA: public/manifest.webmanifest (id:"/", start_url:"/", display:"standalone",
+  shortcuts, screenshots) + public/sw.js v2 (precache, navigate NetworkFirst,
+  asset CacheFirst, SKIP_WAITING message, size handling)
+- Analytics: Plausible defer in index.html:9 (data-domain showy.jubair.bond)
+- Pixel: src/lib/pixel.ts (Meta Pixel initPixel, ViewContent/AddToCart/Purchase)
+- HilltopAds: public/hilltop_7356389.js (373b) + hilltop_7356401.js (371b) via
+  src/lib/hilltop.ts (deferred 2.5s, public routes only, not admin/vendor/checkout)
+  + verification public/0bc71d78ff5d9b68b9fd.txt (20b)
+- Image CDN: src/lib/image.ts optimizedImage() → Supabase ?width=&quality= for
+  supabase storage URLs.
 
 --------------------------------------------------------------------------------
-4. DATABASE SCHEMA (SUPABASE POSTGRESQL TABLES)
+3. USER ROLES & ACCESS CONTROL (RLS)
 --------------------------------------------------------------------------------
-1. `profiles`:
-   - id (uuid, references auth.users)
-   - email (text), full_name (text), phone (text), avatar_url (text)
-   - role (text: 'customer' | 'vendor' | 'admin')
-   - created_at (timestamptz)
-
-2. `shops`:
-   - id (uuid, primary key)
-   - owner_id (uuid, references profiles.id)
-   - name (text), slug (text, unique), description (text)
-   - logo_url (text), banner_url (text)
-   - is_admin_shop (boolean, default false)
-   - is_verified (boolean, default false)
-   - is_active (boolean, default true)
-   - rating (numeric, default 5.0)
-   - bkash_payout_number (text), nagad_payout_number (text), bank_info (jsonb)
-   - created_at (timestamptz)
-
-3. `products`:
-   - id (uuid, primary key)
-   - shop_id (uuid, references shops.id)
-   - title (text), slug (text), description (text)
-   - category (text), subcategory (text), tags (text[])
-   - price (numeric), discount_price (numeric)
-   - stock (integer, default 0)
-   - images (text[])
-   - rating (numeric, default 5.0), reviews_count (integer, default 0)
-   - is_featured (boolean, default false)
-   - is_active (boolean, default true)
-   - created_at (timestamptz)
-
-4. `orders`:
-   - id (uuid, primary key)
-   - order_number (text, unique)
-   - customer_id (uuid, references profiles.id)
-   - customer_name (text), customer_email (text), customer_phone (text)
-   - shipping_address (jsonb: address, city, postal_code, note)
-   - total_amount (numeric)
-   - platform_fee_total (numeric) -- aggregate 5% cut from vendor items
-   - payment_method (text: 'bkash' | 'nagad' | 'card' | 'cod')
-   - payment_status (text: 'pending' | 'paid' | 'failed')
-   - transaction_id (text)
-   - overall_status (text: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled')
-   - created_at (timestamptz)
-
-5. `order_items`:
-   - id (uuid, primary key)
-   - order_id (uuid, references orders.id)
-   - shop_id (uuid, references shops.id)
-   - product_id (uuid, references products.id)
-   - product_title (text), product_image (text)
-   - unit_price (numeric), quantity (integer), total_price (numeric)
-   - is_admin_shop (boolean)
-   - admin_commission_5pct (numeric) -- calculated 5% profit for admin
-   - vendor_amount_95pct (numeric)   -- calculated 95% net for vendor
-   - status (text: 'pending' | 'processing' | 'shipped' | 'delivered')
-
-6. `vendor_wallets`:
-   - id (uuid, primary key)
-   - shop_id (uuid, references shops.id, unique)
-   - total_earnings_95pct (numeric, default 0)
-   - current_balance (numeric, default 0)
-   - total_withdrawn (numeric, default 0)
-   - updated_at (timestamptz)
-
-7. `payout_requests`:
-   - id (uuid, primary key)
-   - shop_id (uuid, references shops.id)
-   - amount (numeric)
-   - payment_method (text: 'bkash' | 'nagad' | 'bank')
-   - account_number (text)
-   - status (text: 'pending' | 'approved' | 'rejected' | 'transferred')
-   - notes (text)
-   - created_at (timestamptz)
-
-8. `reviews`:
-   - id (uuid, primary key)
-   - product_id (uuid, references products.id)
-   - user_id (uuid, references profiles.id)
-   - user_name (text), rating (integer), comment (text)
-   - created_at (timestamptz)
+- profiles.role: 'customer' | 'vendor' | 'admin' (public.is_admin() checks
+  profiles.role='admin' for auth.uid())
+- customer: browse, search, cart, checkout, track orders, wishlist, reviews, Q&A,
+  follow shops, refer & loyalty, returns, invoices
+- vendor: any customer can become vendor by creating a shop (src/pages/CreateShopPage.tsx).
+  After shop creation, profile role may upgrade to 'vendor'. Vendor owns shops
+  where shops.owner_id = auth.uid(). RLS: can SELECT own shop or admin, INSERT with
+  owner_id=auth.uid() and is_admin_shop=false, etc. (supabase-schema.sql:493)
+- admin: role='admin' (set via SQL UPDATE profiles SET role='admin' WHERE id=...).
+  Admin panel at /admin-panel visible only if currentUser.role==='admin'.
+  Policies for admin: FOR ALL USING (is_admin()), e.g., shops, products, orders,
+  payouts, banners, etc. (patches 006,007,010,011)
 
 --------------------------------------------------------------------------------
-5. GITHUB PAGES STATIC DEPLOYMENT CONFIGURATION
+4. SHOPS & VENDOR MANAGEMENT
 --------------------------------------------------------------------------------
-- Built with Vite for ultra-fast bundling and asset optimization.
-- Base path configured for custom domain or GitHub Pages repo path (`./`).
-- Hash-based or 404.html-fallback client routing for seamless page navigation on static hosts.
-- Direct Supabase Client connection via environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
-- Built-in live demo mode with toggleable Supabase backend connection modal so users can test immediately or connect their own Supabase project in 1-click.
+- Shop schema: shops (id, owner_id, name, slug unique, description, logo_url,
+  banner_url, is_admin_shop, is_verified, is_active, rating, bkash/nagad numbers,
+  created_at). Flagship store is_admin_shop=true (100% earnings to admin, 0% fee).
+- Creation wizard: src/pages/CreateShopPage.tsx — 3 steps (Shop Identity, Payout
+  Setup, Launch) with live preview, slug auto-generation, logo/banner upload to
+  storage/media/<uid>/..., payout numbers. Creates shop via apiCreateShop, upgrades
+  role.
+- Settings: src/pages/VendorDashboard.tsx:ShopSettingsForm — edit name, logo,
+  banner, description, payout numbers via updateShop.
+- Admin management: src/pages/AdminPanel.tsx:shops — table (Shop, Owner, Products,
+  Type Flagship/Vendor, Status). Actions: Suspend/Activate (toggleShopActive),
+  Verified badge toggle (toggleShopVerified → shops.is_verified). Uses
+  confirmDialog + toast.
+- Curation: Admin → Curate tab (src/pages/AdminPanel.tsx:curate) — Featured toggle
+  for products (updateProduct is_featured), Categories manager (INITIAL_CATEGORIES
+  + customCats in localStorage:showy_custom_cats, used by FilterSidebar).
+- Public storefront: src/pages/ShopStorefrontPage.tsx — banner h-56, logo offset,
+  verified badge, rating, about, product grid (is_active only).
+- Directory: src/pages/ShopListPage.tsx — search, count, grid of shop cards.
+- Delivery by zone: Admin Curate → Delivery by Zone (inside Dhaka vs outside,
+  localStorage showy_delivery_inside/outside, default 60/120) — used in
+  src/pages/CheckoutPage.tsx:38 (zoneFee = isDhaka ? inside : outside).
+
+--------------------------------------------------------------------------------
+5. PRODUCT CATALOG, SEARCH & FILTERING
+--------------------------------------------------------------------------------
+- Product schema: products (id, shop_id, title, slug, description, category,
+  subcategory, tags text[], price, discount_price, stock, images text[],
+  rating, reviews_count, is_featured, is_active, is_returnable, created_at,
+  search_tsv tsvector via patch 009). Variants: product_variants (id, product_id,
+  option_name, option_value, price, stock, sort_order) — e.g., Size variants.
+- Upload/Edit: src/pages/UploadProductPage.tsx — Basic Info (title, desc, cat,
+  subcat), Pricing (price, discount, stock, earnings preview 95%/100%), Variants
+  (option_name + rows), Images (preview + URL/file upload via storage/media),
+  Tags, Featured/Returnable toggles. Calls addProduct / updateProduct / setProductVariants.
+- Public filtering: src/pages/ProductsPage.tsx — searchQuery (q param), category,
+  shop, priceRange (0-50000, max slider), inStockOnly, minRating, sortBy
+  (popular/price-asc/price-desc/newest/rating). All filters sync to URL
+  (replaceState /products?cat=&shop=&max=&q=&stock=&rating=&sort=) for shareability.
+  Server search: if isLiveMode and q>=2, debounced 300ms RPC search_products(q)
+  via supabase search_tsv ( patch 009: to_tsvector english + GIN index + trigger
+  + function search_products(text) ), falls back to client filter.
+  Filtering also respects is_active.
+- Sidebar: src/components/FilterSidebar.tsx — Category (all + INITIAL + customCats),
+  Price Range slider, Shop list, In stock only checkbox, Minimum Rating radio
+  (Any/4&3 stars), Reset. Uses useStore filters.
+- CategoryBar: src/components/CategoryBar.tsx — horizontal pills (All Categories
+  + each category with count badge, selected bg-brand-600).
+- Search autocomplete: src/components/Navbar.tsx — desktop (hidden md:flex) and
+  mobile drawer — debounced server/client product+shop suggestions (5 products,
+  3 shops) with image, price, category, combobox ARIA (role combobox,
+  aria-controls, aria-activedescendant, ArrowUp/Down/Enter/Escape), listbox/option
+  roles, grouped. Click navigates to product-detail/shop-detail.
+- Sorting & pagination: grid 2/md:3/xl:4, skeleton while loading, empty state.
+
+--------------------------------------------------------------------------------
+6. HERO, DISCOVERY & CONTENT
+--------------------------------------------------------------------------------
+- Hero: src/pages/HomePage.tsx:42 + src/components/HeroCarousel.tsx:1
+  * Fixed from h-[520px] to aspect-[16/9] sm:aspect-[16/9] max-h-[46vh] etc., with
+    object-contain sm:object-cover (mobile full image, desktop cover) to fix Android
+    “products very bellow” (was 520px covering 70% viewport) and desktop black bars.
+    Removed 3-card feature strip (Fast Delivery, bKash/Nagad, Buyer Protection)
+    that conquered a page. Now compact flash with subtle fade.
+  * Carousel: 4 fallback branded gradients (purple/teal/rose/amber) + live banners
+    from public.banners (is_active, sorted). Fetches via supabase, preloads images,
+    infinite loop via clone-first-slide snap (transition 700ms, snap 720ms), autoplay
+    5s pause on hover, touch swipe, dots + arrows. Per-slide overlay
+    bg-gradient-to-t from-black/60 via-black/20, headline bottom-6 left-4.
+  * Admin-managed banners: public.banners table (id, image_url, headline, sub, link,
+    sort, is_active) via patch 008; Admin → Hero Banners tab (CRUD, upload to
+    <uid>/banners/... to satisfy storage RLS media_authenticated_upload, toggle
+    active, delete). Fallback gradients show until admin adds banners.
+- Discovery sections on HomePage (space-y-8, after hero):
+  * Featured Products (is_featured, 4) + View All → products
+  * Flash Deals (discount_price products, countdown HH:MM:SS 24h timer, 4 cards)
+  * New Arrivals (latest 8, skeletons)
+  * Shops showcase (3 activeShops cards)
+  * Recently Viewed (recentlyViewed ids from localStorage:showy_recent, 4 cards)
+  * SEO block (Showy Store — Online Shopping in Bangladesh, multi-vendor copy,
+    links to create-shop/shops/faq/products)
+- Guides SEO hub: src/pages/GuidesPage.tsx — 4 guides (jersey size, bKash vs Nagad,
+  genuine check, 64 districts delivery), linked from Footer Support → Buying Guides,
+  route /guides with SEO meta.
+- Trust: Footer value props, Buyer Protection card, Genuine Guarantee, etc.
+
+--------------------------------------------------------------------------------
+7. CART, WISHLIST & RECENT
+--------------------------------------------------------------------------------
+- Cart: StoreContext cart (CartItem {product, quantity, variant}) — grouped by
+  shop_id in UI. Actions: addToCart (with variant), removeFromCart (lineKey via
+  cartItemKey), updateCartQuantity, clearCart. Persisted to localStorage
+  shoptastic_cart. Totals: cartTotal (variant price or discount), cartCount.
+  UI: src/components/CartDrawer.tsx (right drawer, shop-grouped, qty stepper,
+  trash, subtotal, delivery FREE/fee, total, checkout), src/components/BottomNav.tsx
+  cart badge. Checkout summary also groups cart.
+- Wishlist: patch 008 table wishlist (user_id, product_id PK). StoreContext
+  wishlist string[] (localStorage showy_wishlist + Supabase sync on loadUserData).
+  Actions: toggleWishlist, isWishlisted, wishlistCount. ProductCard heart
+  (top-left, rose when wished, moves to top-12 if discount), Navbar heart badge
+  (min-h 44, aria-label Wishlist, X items), WishlistPage (src/pages/WishlistPage.tsx)
+  grid 2/md:4, empty state, Clear all, Add all to cart, Continue shopping. Route
+  /wishlist, SEO, lazy chunk.
+- Recently Viewed: StoreContext recentlyViewed string[] (max 10, localStorage
+  showy_recent), addRecentlyViewed on ProductDetail mount, HomePage strip.
+
+--------------------------------------------------------------------------------
+8. CHECKOUT & PAYMENT (OPTION A — MANUAL VERIFICATION)
+--------------------------------------------------------------------------------
+- CheckoutPage: src/pages/CheckoutPage.tsx — left col: Delivery Address section
+  (native form with label htmlFor/id, autocomplete name/tel/email/street-address,
+  required aria-required, etc.), Shipping Method fieldset radiogroup (Standard
+  with zoneFee or FREE>5000 vs Express 150), Payment Method fieldset radiogroup
+  (bKash, Nagad, Card disabled, COD). Right: Order Summary (cart lines, subtotal,
+  delivery, coupon discount, total), coupon input, ShieldCheck notice, Place Order
+  triggers handlePaymentSelect → ManualPaymentModal or direct for COD.
+- ManualPaymentModal: src/components/ManualPaymentModal.tsx — brand color (bkash
+  #e2136e / nagad #f7921e), Step 1: merchant number 01863875033 (from business
+  identity), copy, tabs TrxID vs Last 4 digits, input tracking-[0.3em] or numeric,
+  Confirm. On confirm, calls placeOrder with transactionId TRX:XXXX or MOB:****XXXX.
+- placeOrder: StoreContext placeOrder(shipping, paymentMethod, transactionId, discount)
+  * Validates currentUser exists.
+  * LIVE: apiPlaceOrder (api.ts: placeOrder creates orders + order_items with
+    5%/95% split per item, deducts stock, clears cart, awards loyalty ~1% of total,
+    triggers send-order-email Edge Function, refreshes wallets). Sets
+    payment_status='pending' always (admin must verify). For COD, no TrxID.
+  * DEMO: local order creation similar, with adminCommission vs vendorAmount, stock
+    deduct.
+- Coupon redemption: Checkout coupon input validates via api.validateCouponByCode,
+  applies couponDiscountFor (percent/fixed, min, max, usage, expiry), shows
+  discount, affects grandTotal.
+- Delivery fee logic: zoneInside/outside from localStorage (Admin Curate), isDhaka
+  check on city, zoneFee used for Standard; Express fixed 150; FREE over 5000.
+- Success: src/pages/OrderConfirmationPage.tsx — confetti, order_number pill, TrxID
+  or COD notice, invoice card (gradient header, items grouped by shop, totals,
+  address), actions Track Order / Print Invoice / Keep Shopping. Also triggers
+  Pixel Purchase event.
+
+--------------------------------------------------------------------------------
+9. COMMISSION & FINANCIALS (5% / 95%)
+--------------------------------------------------------------------------------
+- Per item split in placeOrder: if shop.is_admin_shop → platform gets 100%,
+  else platform 5% (admin_commission_5pct), vendor 95% (vendor_amount_95pct).
+  Stored in order_items.
+- Aggregates: vendorWallets computed from vendor_wallets table (LIVE) or local
+  orders (demo). Fields: shop_id, total_earnings_95pct, current_balance,
+  total_withdrawn, pending_clearance. platformAdminEarnings = sum of admin’s
+  100% + 5% cuts from paid orders.
+- Payout flow: VendorDashboard Wallet tab → gradient Available for Withdrawal card
+  (lifetime/pending/withdrawn), Request Payout form (amount, method bkash/nagad/bank,
+  account number from shop settings), submit → apiInsertPayout → payout_requests
+  row pending. Admin → Vendor Payouts tab lists pending/total, Approve & Transfer
+  (calls approvePayout → updates to transferred and deducts wallet via trigger) or
+  Reject (returns to balance). Toasts, history table with status pills.
+- Ledger: Admin → Transactions tab (src/pages/AdminPanel.tsx:transactions) via
+  view v_shop_transactions (patch 007: joins order_items→products→shops→orders,
+  computes commission/seller_net, WHERE is_admin()). Shows Date, Order, Shop,
+  Product, Qty, Line Total, Commission 5%, Seller Net 95%, Method, Ref, Payment,
+  totals footer, Export CSV. Requires patch 007.
+
+--------------------------------------------------------------------------------
+10. ORDERS, TRACKING, INVOICING & RETURNS
+--------------------------------------------------------------------------------
+- Schemas: orders (order_number, customer info, shipping_address jsonb, total_amount,
+  platform_fee_total, discount_amount, coupon_code, payment_method, payment_status
+  pending/paid/failed, transaction_id, overall_status pending/processing/shipped/
+  delivered/cancelled/return_requested/returned, created_at) + order_items
+  (status pending/processing/shipped/delivered/return_requested).
+- Tracking: src/pages/OrdersPage.tsx — expandable details per order, live progress
+  tracker (pending→processing→shipped→delivered with emerald progress bar, 76% width
+  calculation), items with VariantChip, shop, qty, status. Shipping/Payment boxes.
+  Actions: Download Invoice (opens print window HTML with order_number, customer,
+  items table, totals), Cancel Order (if pending/processing → cancelOrder updates
+  overall_status cancelled, payment failed), Request Return (if delivered <7d →
+  requestReturn → return_requested). Uses StoreContext cancelOrder/requestReturn
+  (supabase updates).
+- Admin global orders: src/pages/AdminPanel.tsx:orders — list (order_number, date,
+  customer, phone, payment method/status with Verify Paid button for pending
+  non-COD, amount, overall status pill, Refund button for paid). Verify flow:
+  verifyOrderPayment (StoreContext) → sets payment_status paid, then updates
+  order_items pending→processing and overall to processing, logs audit.
+- Manual orders: Admin → Manual Orders tab (src/pages/AdminPanel.tsx:manual-orders)
+  — form (customer name/phone/email/address/city, product picker from active
+  products (100), qty, list with total, payment cod/bkash/nagad) → creates orders
+  + order_items via supabase (order_number ORD-MANUAL-..., shipping json, 5% fee).
+- Invoice: printable HTML via window.open, includes Showy header, order_number,
+  date, customer, payment, items grouped by shop, totals, delivery address,
+  actions in OrderConfirmation (Print Invoice via window.print).
+
+--------------------------------------------------------------------------------
+11. REVIEWS, Q&A & SOCIAL
+--------------------------------------------------------------------------------
+- Reviews: patch 004 table product_reviews (id, product_id, user_id, user_name,
+  rating, comment, created_at) + RLS (own or admin delete). API: fetchReviews,
+  apiUpsertReview. UI: src/pages/ProductDetailPage.tsx: Ratings & Reviews section —
+  stars, write/update form (5-star picker, textarea, photo upload to
+  reviews/<product>/<timestamp> in media bucket, preview), list (user, date,
+  stars, comment), also includes image_url preview if uploaded. Helpful toggle
+  (localStorage showy_helpful, ThumbsUp, aria-pressed), Q&A section (localStorage
+  showy_qa_<product> with question/answer, form, list).
+- Q&A: local Q&A per product (question, answer, user_name, date), seller can
+  answer (not yet wired to DB, but UI shows awaiting).
+- Follow shop: Button in ProductDetail (Users icon, Follow/Following) toggles
+  localStorage showy_followed array, toast. ShopStorefront shows Follow state.
+- Helpful: local helpfulMap.
+
+--------------------------------------------------------------------------------
+12. SETTINGS & PREFERENCES
+--------------------------------------------------------------------------------
+- Route /settings (src/pages/SettingsPage.tsx) — lazy, SEO meta. Sections:
+  * Account: avatar upload to media/<uid>/avatar-..., preview, fullName, phone,
+    email display. Save via profiles update (full_name, phone, avatar_url,
+    default_address).
+  * Default Shipping Address: fullName/phone/address/city, saved to
+    profiles.default_address jsonb, note auto-fills checkout.
+  * Security: new password via supabase.auth.updateUser, sign out.
+  * Preferences: language toggle EN/BN (via useLang), dark mode toggle
+    (document.documentElement.classList dark, localStorage showy_theme),
+    email pref placeholder.
+  * Refer & Earn: referralCode from localStorage showy_referral_code (SHOWY-XXXX),
+    link https://showy.jubair.bond/?ref=CODE, Copy, Loyalty Points display
+    (loyaltyPoints from localStorage showy_points, earned 1% of order total on
+    placeOrder, shown as ≈ ৳ off). Referrals table (patch 009) not yet fully
+    wired but schema exists.
+- Navbar: Settings gear icon (activePage === 'settings' → bg-slate-900), also in
+  user dropdown + mobile drawer. Language toggle EN/বাং in Navbar, persists.
+- Dark mode: App.tsx uses localStorage showy_theme on load, Settings toggle,
+  index.css dark overrides (100% coverage pass with slate, border, glass, shadows,
+  input-base). Tailwind dark handled via class.
+
+--------------------------------------------------------------------------------
+13. ADMIN SUPERPOWERS ( /admin-panel — 11 tabs)
+--------------------------------------------------------------------------------
+- Access: shops.is_admin_shop true for flagship, or profiles.role admin. Panel
+  header Super Admin Panel, Platform Control Center, Manage Flagship Store button.
+- Tabs:
+  * overview: KPIs — My Total Earnings (platformAdminEarnings), GMV (totalGMV),
+    Commission 5%, Active Shops/Products, AOV, Repeat Rate, Pending Payouts,
+    Top Vendors list (earnings per shop), “How automated profit works” explainer
+    (৳1000 → 50/950).
+  * shops: table Shop/Owner/Products/Type Flagship/Vendor, Actions Suspend/Active
+    (toggleShopActive) + Verified/Unverified (toggleShopVerified → shops.is_verified)
+  * orders: Global Orders list with Verify Paid (for pending non-COD) + Refund
+    (for paid → payment failed/cancelled), status pills.
+  * payouts: Vendor Payouts — pending total, list (amount, date, shop, method:account,
+    approve/reject), history.
+  * transactions: Ledger (v_shop_transactions) with Export CSV.
+  * banners: Hero Banners CRUD (headline/sub/link/image_url/sort, upload to
+    <uid>/banners/..., toggle active, delete) via public.banners table.
+  * manual-orders: Create Phone/WhatsApp orders (customer fields, product picker,
+    qty, total, payment).
+  * users: Registered Users table (full_name, email, role badge, Active/Banned
+    pill, Ban/Unban button via profiles.is_banned, confirmDialog, supabase update).
+  * curate: Featured Products toggle (updateProduct is_featured, up to 50 list) +
+    Categories (INITIAL_CATEGORIES + customCats in showy_custom_cats, add/delete)
+    + Delivery by Zone (inside/outside fees, save to localStorage).
+  * coupons: Coupons & Promos (fetchCoupons, create form CODE/discount_type/value/
+    min/max/usage/expiry, table with active toggle, delete). Validation via
+    couponDiscountFor.
+  * security: Security Log (auditLogs via fetchAuditLogs, shown as action/target/details
+    with actor, date).
+- Audit: logs via profiles role changes, etc., viewed in security tab.
+
+--------------------------------------------------------------------------------
+14. VENDOR DASHBOARD ( /vendor-dashboard — 6 tabs)
+--------------------------------------------------------------------------------
+- Guard: if !myShop → Create My Shop CTA. Header logo + name, Upload New Product.
+- Tabs: Overview, My Products, Orders, Earnings & Payout, My Coupons, Shop Settings
+- Overview: 4 KPI cards (Total Products, Pending Orders, Gross Revenue, Net Balance
+  95%), 7-day sales bar chart (sales7d from orders, max, per day), low-stock
+  alerts (stock 1-5, chips), commission explainer.
+- Products: table Product (image/title), Price, Stock inline number input (amber if
+  ≤5), Status Active/Hidden toggle, Actions Edit (→ upload-product?productId),
+  Duplicate (addProduct copy as hidden draft with (Copy) slug), Delete (confirm).
+  Export CSV. Stock editing via updateProduct.
+- Orders: pipeline tabs all/processing/shipped/delivered, Export CSV, per item card
+  (image, title×qty, order_number/customer, total + You receive 95%, payment pill
+  Paid/COD/Awaiting, Fulfillment buttons processing/shipped/delivered via
+  updateOrderStatus, consignment input Truck icon, localStorage showy_consignment).
+- Wallet: gradient Available for Withdrawal (current_balance), Lifetime/Pending/Withdrawn,
+  Request Payout form (amount, method bkash/nagad/bank with numbers from shop),
+  submit → requestPayout, Payout History (status transferred/pending with CheckCircle).
+- Coupons: My Coupons tab — create via apiInsertCoupon (CODE, percent/fixed, value,
+  min), list (code, discount, active pill). Global but vendor-created.
+- Settings: ShopSettingsForm (name, logo_url, banner_url, description, payout numbers)
+  → updateShop.
+
+--------------------------------------------------------------------------------
+15. AUTH & USER MANAGEMENT
+--------------------------------------------------------------------------------
+- Supabase Auth: signUp (email, password, fullName) → profiles row, signIn,
+  signOut, onAuthChange listener, getSessionUser, fetchProfile, fetchProfiles (admin).
+- UI: AuthModal (src/components/AuthModal.tsx) — brand panel, login/signup toggle,
+  full name/email/password, error alert, confirm email state. Triggered via
+  setAuthModalOpen from Navbar/Cart/PDP.
+- Profiles: id, email, full_name, phone, avatar_url, role, default_address jsonb,
+  prefs jsonb, is_banned, loyalty_points, referral_code, created_at. Patches:
+  008 adds phone/avatar/default_address/prefs, 009 adds is_banned/loyalty/referral,
+  011 adds storage fix.
+- Referrals: referrals table (referrer_id, referee_id, code, unique referee)
+  via patch 009, code from localStorage, link ?ref=.
+
+--------------------------------------------------------------------------------
+16. SEARCH & NAVIGATION
+--------------------------------------------------------------------------------
+- Router: real-path URLs (/, /products, /product/:id, /shop/:id, /shops,
+  /create-shop, /upload-product, /checkout, /order-confirmation?id=, /orders,
+  /wishlist, /settings, /vendor-dashboard, /admin-panel, /about, etc.) via
+  pathForRoute / routeFromLocation, KnownPages, handlePop, navigate pushState,
+  scrollTo, per-route SEO via setSeo + setJsonLd (Product JSON-LD).
+- Navbar: sticky top glass, Top Banner (Multi-Vendor Marketplace), Logo, Search Bar
+  (hidden md:flex, max-w-md, pl-10, Search icon, Search button) with autocomplete
+  (server serverAuto via RPC search_products + client fallback, grouped Products
+  with image/price/category and Shops with logo, See all results), desktop nav
+  All Products/Explore Shops/My Shop Panel/Open Your Shop/Admin Panel, right controls
+  language toggle, Settings gear (activePage), avatar dropdown (role badge, My Orders,
+  Settings, Vendor Dashboard, Sign Out) or Guest Sign In, Wishlist heart badge,
+  Cart ShoppingBag badge, mobile hamburger → drawer (glass, search + nav links).
+  Combobox ARIA: role combobox, aria-expanded, aria-controls, activeDescendant,
+  ArrowUp/Down/Enter/Escape, listbox/option roles.
+- CategoryBar: horizontal pills (All Categories + each INITIAL + customCats, counts,
+  selected bg-brand-600).
+- BottomNav: mobile bottom glass nav (Home/Browse/Cart/Shops/Orders) with active
+  indicator.
+
+--------------------------------------------------------------------------------
+17. CART & CHECKOUT
+--------------------------------------------------------------------------------
+- Cart: bottom nav cart, drawer grouping by shop, qty, trash, subtotal, delivery,
+  total, checkout. LocalStorage.
+- Checkout: multi-step with Delivery Address (native form with htmlFor/id,
+  autocomplete name/tel/email/street-address, required, aria-required), Shipping
+  fieldset radiogroup (Standard with zoneFee or FREE>5000 vs Express 150), Payment
+  fieldset radiogroup (bKash/Nagad/COD, Visa disabled), Order Summary sticky,
+  Coupon, Totals, Place Order → gateway or COD.
+
+--------------------------------------------------------------------------------
+18. PRODUCT DETAIL ENHANCEMENTS
+--------------------------------------------------------------------------------
+- Breadcrumbs (Home / category / title), image gallery aspect-square + thumbnails,
+  discount badge, shop link Visit + Follow, title, rating (aria-label stars),
+  variant selector radiogroup (Size options with price/stock, required, alert),
+  price block (effectivePrice, SAVE), stock message (Only X left / In stock),
+  qty stepper with aria-live, Add to Cart (with trackAddToCart pixel) + Buy Now,
+  trust badges (Fast Delivery, Genuine, 7-Day Return), description, tags, reviews
+  (photo, helpful ThumbsUp), Q&A (local), Related Products.
+
+--------------------------------------------------------------------------------
+19. UI/UX POLISH (RECENT V3)
+--------------------------------------------------------------------------------
+- Hero: from fixed 520px to aspect-[16/9] sm:aspect-[21/9] max-h-[46vh] etc., with
+  object-contain sm:object-cover (mobile full image, desktop cover) and removed
+  3-card strip that blocked products on Android. Now compact, original ratio.
+- Carousel: seamless circular via clone-first-slide snap (isClone, transitionEnabled),
+  5s autoplay, pause on hover, touch swipe, dots + arrows.
+- Dark mode: 100% coverage via index.css dark overrides (slate, border, glass, shadows),
+  toggle in Settings + Navbar, persisted.
+- Tokens: tailwind.config borderRadius/fontSize additions, slate vs gray unified to
+  slate, index.html body font-sans.
+- Premium direction: muted slate-950 + brand-600, generous whitespace, no bounce
+  (animate-bounce removed), gray-on-color warnings fixed.
+- a11y: Navbar combobox, menu roles, 44px targets, Checkout fieldsets, ProductDetail
+  radiogroup, skip link href="#main" in App.tsx, main id="main" tabIndex -1, PWA
+  manifest shortcuts, sw v2 with SKIP_WAITING.
+
+--------------------------------------------------------------------------------
+20. PAYMENTS & VERIFICATION
+--------------------------------------------------------------------------------
+- Option A: Manual bKash/Nagad OTP simulation + TrxID verification. Merchant number
+  01863875033. Modal collects TRX:XXXX or MOB:****XXXX, creates order pending,
+  Admin → Global Orders → Verify Paid moves to paid + processing. Refund handling
+  added (paid → failed/cancelled).
+- Delivery by zone: 60 inside Dhaka / 120 outside (Admin Curate), COD handling.
+- Pixel & Analytics: Meta Pixel via src/lib/pixel.ts (initPixel, ViewContent, AddToCart,
+  Purchase) + Plausible defer.
+
+--------------------------------------------------------------------------------
+21. DATABASE PATCHES APPLIED / TO APPLY
+--------------------------------------------------------------------------------
+- Already run: 001 (security), 002 (variants), 003 (coupons) — per SQL Editor.
+- Pending for user to run: 004 (product_reviews), 006 (orders_admin_update), 007
+  (admin ledger view + order_items admin), 008 (banners, wishlist, profile cols),
+  009 (referrals, loyalty, search_tsv, GIN, trigger, search_products fn),
+  010 (banners RLS fix), 011 (storage banner upload admin fix + banners re-confirm).
+  Files in repo root: supabase-*-patch-*.sql, supabase-banner-fix-patch-010.sql, etc.
+- New in repo: public/hilltop_7356389.js + 7356401.js (HilltopAds MULTITAG BANNER
+  APPROVED, in-page, deferred) + verification 0bc71d78ff5d9b68b9fd.txt
+
+--------------------------------------------------------------------------------
+22. SEO, PWA & GROWTH
+--------------------------------------------------------------------------------
+- SEO: per-route titles/descriptions + Product JSON-LD, sitemap dynamic, robots.txt,
+  canonical, verification meta rWWF..., OG/Twitter, JSON-LD alternateName Showy Store,
+  compressed images (logo 1MB→107KB, poster 944KB→47KB), guides page, sitemap
+  includes product/shop pages, merchant feed.
+- PWA: manifest shortcuts, sw v2 (precache, navigate NetworkFirst with req, asset
+  CacheFirst, message SKIP_WAITING), offline fallback to /index.html.
+- Growth: referral ?ref=, loyalty 1%, flash deals, recently viewed, wishlist, search,
+  category manager, delivery zone, manual orders, user bans, banner management.
+
+--------------------------------------------------------------------------------
+23. SECURITY & STORAGE
+--------------------------------------------------------------------------------
+- RLS enabled on all tables, policies using is_admin() = EXISTS profile role admin,
+  owns_shop(), etc. Storage bucket media public, policies: media_public_read,
+  media_authenticated_upload (foldername = auth.uid()), media_owner_manage, plus
+  media_admin_any (for banners). Patches 007,011 fix.
+- Audit logs: viewable in Admin → Security Log.
+
+--------------------------------------------------------------------------------
+24. MONETIZATION
+--------------------------------------------------------------------------------
+- HilltopAds: Site 914461 Mainstream verified via 0bc71d78ff5d9b68b9fd.txt, zones
+  7356389 + 7356401 MULTITAG BANNER APPROVED (currently live, in-page, no popunder
+  after user request to remove 7353953 popunder). Popunder 7353957 also APPROVED
+  but disabled per user. Meta referrer tag not needed for these zones (script sets
+  referrerPolicy). Earnings via Publisher Balance, withdraw via Payoneer/bank etc.
+  (BD needs NID, or guardian Payoneer).
+
+--------------------------------------------------------------------------------
+25. KNOWN ISSUES & NEXT STEPS
+--------------------------------------------------------------------------------
+- If hero still tall on desktop, adjust HomePage max-h or image object-fit per uploaded
+  banner ratio.
+- If wishlist/banners not saving, ensure patches 008/010/011 run and storage path uses
+  <uid>/banners/... (fixed in src/pages/AdminPanel.tsx:127).
+- If search not returning, ensure patch 009 search_tsv backfill ran.
+- Future: expand i18n to cover remaining hard-coded strings (Footer, Checkout) fully,
+  add Lighthouse 95+ pass, push notifications, abandoned cart email.
+
+================================================================================
+  END — This is Showy as of commit ae1cea4 (HilltopAds dual in-page) + 50fd343
+  (premium UI) + hotfix 357e4c0 (i18n safe). Your part: pull, run patches
+  004,006,007,008,009,010,011, hard refresh, test in incognito, submit
+  showy.jubair.bond/sitemap.xml + merchant-feed.xml to GSC/Merchant Center.
 ================================================================================

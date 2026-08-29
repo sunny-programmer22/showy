@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   Store, ArrowRight, ShieldCheck, Sparkles,
   ShoppingBag, TrendingUp, LayoutDashboard, Flame, Clock
@@ -37,75 +38,94 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   ).slice(0, 8);
   const activeShops = shops.filter((s) => s.is_active);
+  const reduce = useReducedMotion();
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* ===== HERO with Sliding Posters — original aspect, full image at top ===== */}
-      <section className="relative bg-slate-950 overflow-hidden">
-        <div className="relative w-full aspect-[16/9] max-h-[42vh] sm:aspect-[21/9] sm:max-h-[440px]">
-          <HeroCarousel />
-          {/* Ambient glow orbs - subtle inside aspect wrapper */}
-          <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-brand-600/20 rounded-full blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 right-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl" />
-          {/* Content overlay */}
-          <div className="absolute inset-0 flex items-center">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8 sm:py-12">
-              <div className="max-w-xl space-y-5 sm:space-y-7">
-                <div className="animate-fade-up inline-flex items-center gap-2 px-3.5 py-1.5 glass-dark border border-white/15 rounded-full text-[11px] font-bold text-amber-300 shadow-soft">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Bangladesh's Multi-Vendor Marketplace
+    <div className="space-y-10 sm:space-y-16 pb-16 bg-[#FCFCF9]">
+      {/* ===== HERO — Editorial Split, Soft Structuralism ===== */}
+      <section className="relative bg-[#FDFBF7] border-b border-slate-200/60 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20 grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 items-center">
+          {/* Left — Massive Typography */}
+          <div className="space-y-6 sm:space-y-7">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-[10px] font-medium tracking-[0.18em] uppercase text-slate-600 shadow-sm">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              Bangladesh's Multi-Vendor Marketplace
+            </div>
+
+            <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tighter leading-[0.9] text-slate-900">
+              <span className="block">Shop</span>
+              <span className="block text-slate-400">Everything.</span>
+              <span className="block">Sell <span className="font-light italic pr-1" style={{ fontFamily: 'Sora, serif' }}>Anything.</span></span>
+            </h1>
+
+            <p className="text-[15px] leading-relaxed text-slate-600 max-w-[50ch]">
+              {t('heroSub')}. <span className="text-slate-900 font-medium">{activeShops.length}+ verified shops</span> and <span className="text-slate-900 font-medium">{products.length}+ products</span> across 64 districts.
+            </p>
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <button onClick={() => onNavigate('products')}
+                className="group relative inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-slate-900 text-white rounded-full font-medium text-sm transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-black active:scale-[0.98]">
+                <span>{t('startShopping')}</span>
+                <span className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+              </button>
+              {userShop ? (
+                <button onClick={() => onNavigate('vendor-dashboard')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-full font-medium text-sm text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                  <LayoutDashboard className="w-4 h-4" /> My Shop Panel
+                </button>
+              ) : (
+                <button onClick={() => onNavigate('create-shop')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-full font-medium text-sm text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                  <Store className="w-4 h-4" /> Open Your Shop
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-6 sm:gap-8 pt-2 border-t border-slate-200/60">
+              {[
+                { value: `${activeShops.length}+`, label: 'Verified Shops' },
+                { value: `${products.length}+`, label: 'Products' },
+                { value: '64', label: 'Districts' }
+              ].map((s) => (
+                <div key={s.label}>
+                  <p className="text-xl sm:text-2xl font-light tracking-tight text-slate-900">{s.value}</p>
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 font-medium">{s.label}</p>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <h1 className="animate-fade-up delay-75 text-[1.9rem] leading-[1.05] sm:text-5xl font-extrabold text-white">
-                  {t('heroTitle1')}
-                  <span className="block text-gradient pb-1">{t('heroTitle2')}</span>
-                </h1>
-
-                <p className="animate-fade-up delay-150 text-xs sm:text-base text-slate-300 leading-relaxed">
-                  {t('heroSub')}.
-                </p>
-
-                <div className="animate-fade-up delay-225 flex flex-wrap gap-3 pt-1">
-                  <button onClick={() => onNavigate('products')}
-                    className="btn-shine px-6 py-3 sm:px-7 sm:py-3.5 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 shadow-cta flex items-center gap-2 active:scale-95">
-                    <ShoppingBag className="w-4 h-4" /> {t('startShopping')}
-                  </button>
-                  {userShop ? (
-                    <button onClick={() => onNavigate('vendor-dashboard')}
-                      className="px-6 py-3 sm:px-7 sm:py-3.5 glass-dark border border-emerald-400/30 text-emerald-300 hover:text-white hover:border-emerald-300/60 font-extrabold text-xs sm:text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 active:scale-95">
-                      <LayoutDashboard className="w-4 h-4" /> My Shop Panel
-                    </button>
-                  ) : (
-                    <button onClick={() => onNavigate('create-shop')}
-                      className="px-6 py-3 sm:px-7 sm:py-3.5 glass-dark border border-white/25 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/60 flex items-center gap-2 active:scale-95">
-                      <Store className="w-4 h-4" /> Open Your Shop
-                    </button>
-                  )}
-                </div>
-
-                {/* Trust stats - compact on mobile */}
-                <div className="animate-fade-up delay-300 flex items-center gap-5 sm:gap-7 pt-2 text-white/90">
-                  {[
-                    { value: `${activeShops.length}+`, label: 'Verified Shops' },
-                    { value: `${products.length}+`, label: 'Products' },
-                    { value: '64', label: 'Districts Served' }
-                  ].map((s) => (
-                    <div key={s.label}>
-                      <p className="text-lg sm:text-2xl font-extrabold font-display">{s.value}</p>
-                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-bold">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
+          {/* Right — Double-Bezel Bento */}
+          <div className="relative lg:pl-4">
+            <div className="bg-black/[0.04] p-2 sm:p-3 rounded-[2rem] ring-1 ring-black/5">
+              <div className="bg-white rounded-[calc(2rem-0.75rem)] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-black/[0.04] aspect-[4/3] sm:aspect-[16/10] relative">
+                <HeroCarousel />
+              </div>
+            </div>
+            <div className="hidden sm:flex absolute -bottom-4 -left-4 bg-white rounded-2xl p-3 shadow-[0_12px_40px_rgba(0,0,0,0.10)] border border-slate-100 items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-900">Buyer Protection</p>
+                <p className="text-[11px] text-slate-500">Verified merchants • 64 districts</p>
               </div>
             </div>
           </div>
         </div>
-        {/* Subtle bottom fade */}
-        <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-slate-50/60 to-transparent pointer-events-none" />
       </section>
 
       {/* ===== Featured Products ===== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <motion.section
+        initial={reduce ? false : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
+      >
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{t('featuredProducts')}</h2>
@@ -120,11 +140,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
             <ProductCard key={p.id} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ===== Flash Deals ===== */}
       {flashProducts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <motion.section
+          initial={reduce ? false : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4"
+        >
           <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2"><Flame className="w-6 h-6 text-rose-500" /> Flash Deals <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full text-xs">Limited time</span></h2>
             <div className="flex items-center gap-1.5 text-sm font-mono font-bold bg-slate-900 text-white px-3 py-1.5 rounded-xl">
@@ -136,12 +162,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
               <ProductCard key={`flash-${p.id}`} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
             ))}
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* ===== Vendor CTA banner ===== */}
       {!userShop && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.section
+          initial={reduce ? false : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        >
         <div className="relative rounded-3xl bg-gradient-to-r from-emerald-700 via-teal-800 to-slate-900 p-8 sm:p-12 overflow-hidden shadow-lift">
           <TrendingUp className="absolute right-6 top-6 w-32 h-32 text-white/5 rotate-12" />
           <div className="pointer-events-none absolute -left-10 -bottom-16 w-64 h-64 bg-emerald-400/20 blur-3xl rounded-full" />
@@ -156,11 +188,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
             </button>
           </div>
         </div>
-        </section>
+        </motion.section>
       )}
 
       {/* ===== New Arrivals ===== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <motion.section
+        initial={reduce ? false : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
+      >
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{t('newArrivals')}</h2>
@@ -177,10 +215,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
                 <ProductCard key={p.id} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
               ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ===== Shops showcase ===== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <motion.section
+        initial={reduce ? false : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
+      >
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{t('popularShops')}</h2>
@@ -193,37 +237,47 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {dataLoading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                  <Skeleton className="h-24 rounded-none" />
-                  <div className="pt-7 p-5 space-y-2">
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-3 w-3/4" />
+                <div key={i} className="p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5">
+                  <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-sm">
+                    <Skeleton className="h-24 rounded-none" />
+                    <div className="pt-7 p-5 space-y-2">
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-3 w-3/4" />
+                    </div>
                   </div>
                 </div>
               ))
             : activeShops.slice(0, 3).map((shop) => (
             <div key={shop.id} onClick={() => onNavigateToShop(shop.id)}
-              className="group cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all">
-              <div className="h-24 relative">
-                <img src={shop.banner_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent" />
-                <img src={shop.logo_url} alt="" className="absolute -bottom-5 left-4 w-14 h-14 rounded-xl border-4 border-white object-cover shadow" />
-              </div>
-              <div className="pt-7 p-5">
-                <p className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
-                  {shop.name}
-                  <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-                </p>
-                <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{shop.description}</p>
+              className="group cursor-pointer p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5 hover:bg-black/[0.06] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1">
+              <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.04]">
+                <div className="h-24 relative">
+                  <img src={shop.banner_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent" />
+                  <img src={shop.logo_url} alt="" className="absolute -bottom-5 left-4 w-14 h-14 rounded-xl border-4 border-white object-cover shadow" />
+                </div>
+                <div className="pt-7 p-5">
+                  <p className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                    {shop.name}
+                    <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
+                  </p>
+                  <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{shop.description}</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ===== Recently Viewed ===== */}
       {recentlyProducts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <motion.section
+          initial={reduce ? false : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4"
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold tracking-tight text-slate-900">Recently Viewed</h2>
             <button onClick={() => onNavigate('products')} className="text-xs font-bold text-brand-600 hover:text-brand-700">Browse more →</button>
@@ -233,7 +287,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
               <ProductCard key={`recent-${p.id}`} product={p} onSelectProduct={onSelectProduct} onNavigateToShop={onNavigateToShop} />
             ))}
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* ===== SEO content block ===== */}

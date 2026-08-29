@@ -36,14 +36,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => onSelectProduct && onSelectProduct(product)}
-      className="group bg-white rounded-2xl border border-slate-200/70 overflow-hidden shadow-soft hover:shadow-lift hover:-translate-y-1.5 hover:border-brand-200 transition-all duration-300 ease-out flex flex-col cursor-pointer relative"
+      className="group cursor-pointer p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5 hover:bg-black/[0.06] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1"
     >
+      <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.04] flex flex-col">
       {/* Product Image & Badges */}
-      <div className="relative aspect-square w-full bg-slate-100 overflow-hidden">
+      <div className="relative aspect-square w-full bg-[#F8F8F7] overflow-hidden">
         <img
           src={optimizedImage(product.images[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800', 400)}
           alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
           loading="lazy"
         />
 
@@ -138,18 +139,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             type="button"
             onClick={handleAddToCart}
             disabled={product.stock === 0}
-            className={`p-2.5 rounded-xl text-white transition-all duration-300 flex items-center justify-center ${
+            className={`group/btn relative p-2.5 rounded-full text-white transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] flex items-center justify-center active:scale-[0.98] ${
               added
-                ? 'bg-emerald-600 scale-105'
+                ? 'bg-emerald-600'
                 : product.stock === 0
                 ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-brand-600 hover:bg-brand-500 active:scale-90 shadow-cta'
+                : 'bg-slate-900 hover:bg-black'
             }`}
             title={product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
           >
             <ShoppingCart className={`w-4 h-4 ${added ? 'animate-pulse' : ''}`} />
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -91,18 +91,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
   };
 
   return (
-    <header className="sticky top-0 z-40 glass border-b border-slate-900/5 shadow-soft">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-brand-700 to-slate-900 text-white text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2">
-        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
-        <span>
-          Multi-Vendor Marketplace
-          <span className="hidden sm:inline"> • Create Your Own Shop Today!</span>
-        </span>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
+    <>
+      <header className="fixed top-4 sm:top-6 inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-[min(1120px,96vw)]">
+      <div className="bg-white/80 backdrop-blur-2xl border border-white/60 rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] ring-1 ring-black/5 px-3 sm:px-4 py-2 flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo */}
           <button
             onClick={() => onNavigate('home')}
@@ -380,11 +371,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden glass border-b border-slate-200/60 px-4 pt-2 pb-4 space-y-3 text-sm animate-fade-up shadow-soft">
+        <div id="mobile-drawer" role="dialog" aria-modal="true" aria-label="Mobile navigation" className="fixed top-[88px] inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-40 w-auto sm:w-[min(1120px,96vw)] lg:hidden bg-white/85 backdrop-blur-2xl border border-white/20 rounded-[1.5rem] p-4 space-y-3 text-sm shadow-[0_16px_48px_rgba(0,0,0,0.12)] overflow-hidden animate-fade-up">
           <form onSubmit={handleSearchSubmit} className="relative" onBlur={() => setTimeout(() => setShowAutocomplete(false), 180)}>
             <input
               type="text"
@@ -482,6 +472,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCart, onNavigate, activePa
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 };
