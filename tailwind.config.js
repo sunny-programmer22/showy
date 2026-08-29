@@ -9,6 +9,7 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['"Sora"', '"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['"Cormorant Garamond"', 'serif'],
       },
       colors: {
         brand: {
@@ -25,6 +26,9 @@ export default {
         },
         bkash: '#e2136e',
         nagad: '#f7921e',
+        cream: '#FDFBF7',
+        sage: '#8A9A8B',
+        espresso: '#1A1714',
       },
       boxShadow: {
         soft: '0 2px 20px -4px rgb(15 23 42 / 0.06), 0 1px 3px rgb(15 23 42 / 0.04)',
