@@ -65,10 +65,12 @@ export const AboutPage: React.FC<{ onBack: () => void; onNavigate?: (page: strin
         { icon: BadgeCheck, label: 'Verified sellers', desc: 'Shops are reviewed before they sell' },
         { icon: Truck, label: 'Nationwide delivery', desc: 'Cash on delivery everywhere' }
       ].map((f) => (
-        <div key={f.label} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <f.icon className="w-5 h-5 text-brand-600 mb-2" />
-          <p className="text-xs font-extrabold text-slate-800">{f.label}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">{f.desc}</p>
+        <div key={f.label} className="p-1.5 bg-black/[0.04] rounded-[1.5rem] ring-1 ring-black/5">
+          <div className="bg-white rounded-[calc(1.5rem-0.375rem)] p-4 shadow-sm ring-1 ring-black/[0.04]">
+            <f.icon className="w-5 h-5 text-brand-600 mb-2" />
+            <p className="text-xs font-extrabold text-slate-800">{f.label}</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{f.desc}</p>
+          </div>
         </div>
       ))}
     </div>
@@ -157,21 +159,45 @@ const FAQS: { q: string; a: string }[] = [
   { q: 'Is my payment information safe?', a: 'Payments are verified directly through bKash/Nagad OTP flows. We never store your mobile wallet PIN or full card details on our servers.' }
 ];
 
-export const FaqPage: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-  <Shell icon={HelpCircle} title="FAQ" subtitle="Quick answers to common questions" tint="bg-purple-500/10 text-purple-600" onBack={onBack}>
-    <div className="space-y-3">
-      {FAQS.map((f, i) => (
-        <details key={i} className="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden open:shadow-md transition-shadow">
-          <summary className="flex items-center justify-between gap-3 cursor-pointer select-none px-5 py-4 text-sm font-bold text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-            {f.q}
-            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 group-open:rotate-180" />
-          </summary>
-          <p className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">{f.a}</p>
-        </details>
-      ))}
-    </div>
-  </Shell>
-);
+export const FaqPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const [active, setActive] = useState(0);
+  const [query, setQuery] = useState('');
+  const filtered = FAQS.map((f, idx) => ({ ...f, idx })).filter((f) => f.q.toLowerCase().includes(query.toLowerCase()) || f.a.toLowerCase().includes(query.toLowerCase()));
+  return (
+    <Shell icon={HelpCircle} title="FAQ" subtitle="Quick answers to common questions" tint="bg-purple-500/10 text-purple-600" onBack={onBack}>
+      <div className="mb-6">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search questions..."
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          aria-label="Search FAQs"
+        />
+      </div>
+      <div className="grid md:grid-cols-5 gap-6">
+        <div className="md:col-span-2 space-y-1">
+          {filtered.map((f) => (
+            <button
+              key={f.idx}
+              onClick={() => setActive(f.idx)}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition text-wrap:balance ${active === f.idx ? 'bg-slate-900 text-white shadow-md' : 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700'}`}
+            >
+              {f.q}
+            </button>
+          ))}
+          {filtered.length === 0 && <p className="text-sm text-slate-500 p-4">No matches. Try a different keyword.</p>}
+        </div>
+        <div className="md:col-span-3">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-h-[220px]">
+            <h3 className="font-bold text-slate-900">{FAQS[active]?.q}</h3>
+            <p className="text-sm text-slate-600 leading-relaxed mt-3 max-w-[65ch]">{FAQS[active]?.a}</p>
+          </div>
+        </div>
+      </div>
+    </Shell>
+  );
+};
 
 /* -------------------------------- Privacy -------------------------------- */
 

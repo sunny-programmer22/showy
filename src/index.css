@@ -26,6 +26,13 @@
   /* Headings get the display face automatically */
   h1, h2, h3 {
     @apply font-display tracking-tight;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {

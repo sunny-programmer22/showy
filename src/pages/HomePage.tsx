@@ -237,12 +237,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
             {t('allShops')} <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 auto-rows-fr grid-flow-dense">
           {dataLoading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5">
-                  <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-sm">
-                    <Skeleton className="h-24 rounded-none" />
+                <div key={i} className={`${i === 0 ? 'md:col-span-2 md:row-span-2' : ''} p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5`}>
+                  <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-sm h-full">
+                    <Skeleton className="h-24 md:h-32 rounded-none" />
                     <div className="pt-7 p-5 space-y-2">
                       <Skeleton className="h-4 w-1/2" />
                       <Skeleton className="h-3 w-3/4" />
@@ -258,20 +258,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
               whileInView={{ opacity: 1, y: 0, rotate: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: index * 0.07 }}
-              className="group cursor-pointer p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5 hover:bg-black/[0.06] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1 will-change-transform"
+              className={`group cursor-pointer p-1.5 bg-black/[0.04] rounded-[1.75rem] ring-1 ring-black/5 hover:bg-black/[0.06] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1 will-change-transform ${index === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}
             >
-              <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.04]">
-                <div className="h-24 relative overflow-hidden">
+              <div className="bg-white rounded-[calc(1.75rem-0.375rem)] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.04] h-full flex flex-col">
+                <div className={`${index === 0 ? 'h-32 md:h-40' : 'h-24'} relative overflow-hidden shrink-0`}>
                   <img src={shop.banner_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]" />
                   <div className="absolute inset-0 bg-gradient-to-t from-espresso/60 to-transparent" />
                   <img src={shop.logo_url} alt="" className="absolute -bottom-5 left-4 w-14 h-14 rounded-xl border-4 border-white object-cover shadow" />
                 </div>
-                <div className="pt-7 p-5">
+                <div className="pt-7 p-5 flex-1 flex flex-col">
                   <p className="font-extrabold text-espresso text-sm flex items-center gap-1.5">
                     {shop.name}
                     <ShieldCheck className="w-3.5 h-3.5 text-sage" />
                   </p>
-                  <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{shop.description}</p>
+                  <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 flex-1">{shop.description}</p>
+                  <p className="text-[10px] font-medium tracking-[0.14em] uppercase text-slate-400 mt-3">Visit storefront →</p>
                 </div>
               </div>
             </motion.div>
