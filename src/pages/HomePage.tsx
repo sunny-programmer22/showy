@@ -10,6 +10,7 @@ import { ProductCard } from '../components/ProductCard';
 import { ProductCardSkeleton, Skeleton } from '../components/ui/Skeleton';
 import { Product } from '../types';
 import HeroCarousel from '../components/HeroCarousel';
+import { CategoryBar } from '../components/CategoryBar';
 
 interface HomePageProps {
   onSelectProduct: (p: Product) => void;
@@ -117,6 +118,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectProduct, onNavigateT
           </div>
         </div>
       </section>
+
+      <CategoryBar onSelectCategory={() => onNavigate('products')} />
 
       {/* ===== Featured Products ===== */}
       <motion.section

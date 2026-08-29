@@ -405,8 +405,8 @@ const Router: React.FC = () => {
     }
   };
 
-  // CategoryBar only shows on shopping-related pages
-  const showCategoryBar = ['home', 'products'].includes(route.page);
+  // CategoryBar shows on products only — on home it lives after the hero intro
+  const showCategoryBar = ['products'].includes(route.page);
 
   return (
     /* Bottom padding clears the mobile bottom nav (+ iOS safe area) */
