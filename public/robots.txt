@@ -1,4 +1,48 @@
 User-agent: *
 Allow: /
 
+# AI & Search crawlers — explicitly allowed for Showy Store
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Grok
+Allow: /
+
+# CLI tools and other AI agents
+User-agent: opencode
+Allow: /
+
+User-agent: claude
+Allow: /
+
+User-agent: antigravity
+Allow: /
+
 Sitemap: https://showy.jubair.bond/sitemap.xml
+
+# AI entry point for LLMs and CLI tools
+# See https://showy.jubair.bond/llms.txt — curated for ChatGPT, Gemini, Grok, Claude, OpenCode, Antigravity and all search engines
